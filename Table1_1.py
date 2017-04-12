@@ -152,7 +152,7 @@ class Table(object):
         return self.is_UDF
     
     def is_norm_preds(self):
-        return (len(self.getNormPreds().getPreds())>0)
+        return (len(self.getNormPreds())>0)
         
     def resetCum_cost(self):
         self.cum_cost = 0.0

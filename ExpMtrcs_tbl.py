@@ -24,7 +24,7 @@ class ExpMtrcs_dict(object):
 
     def add_predicate_TM(self, TM, exp_mtrc_tbl):
         """ have to initiate it """
-        self._tbls[TM].add(exp_mtrc_tbl)
+        self._TMs[TM].add(exp_mtrc_tbl)
         
     def getTblGraph(self):
         return self._tbls
@@ -52,10 +52,18 @@ class ExpMtrcs_dict(object):
     def __repr__(self):
         return '{}({})\r({})'.format(self.__class__.__name__, dict(self._tbls), dict(self._TMs))
                 
-class ExpMtrcs_tbl(object):
     
+class ExpMtrcs_tbl(object):
+
     def __init__(self, table):
-        self.table_name = table.getTableName()
+        """ need to know current est. cum_cost/card and preds to do
+            and if  """
+        """ deep or swallow copy """
+        """
+        
+        
+        """
+        #self.table = table
         self.exp_card = table.getCard()
         self.exp_cum_cost = table.getCum_cost()
         self.norm_preds_todo = table.getNormPreds()
@@ -64,10 +72,9 @@ class ExpMtrcs_tbl(object):
         self.is_udf_preds = table.get_is_udf()
         self.norm_preds_done = False
         self.udf_preds_done = False
-
-        
-    def get_table_name(self):
-        return self.table_name
+    
+    def get_table(self):
+        return self.table
     
     def set_exp_card(self, card):
         """ initially """
@@ -110,7 +117,7 @@ class ExpMtrcs_tbl(object):
             return False
     
     def __str__(self):
-        return 'Table Name:{}; exp_card:{}; exp_cum_cost:{}; (is_norm_preds:{}; preds_done:{}); (is_udf_preds:{}; preds_done:{})'.format(self.table, self.exp_card, self.exp_cum_cost,self.is_norm_preds, self.is_udf_preds, self.norm_preds_done, self.udf_preds_done)
+        return 'exp_card:{}; exp_cum_cost:{}; (is_norm_preds:{}; preds_done:{}); (is_udf_preds:{}; preds_done:{})'.format(self.exp_card, self.exp_cum_cost,self.is_norm_preds, self.is_udf_preds, self.norm_preds_done, self.udf_preds_done)
         
     def __repr__(self):
         return 'exp_card:{}; exp_cum_cost:{}; (is_norm_preds:{}; preds_done:{}); (is_udf_preds:{}; preds_done:{})'.format(self.exp_card, self.exp_cum_cost,self.is_norm_preds, self.is_udf_preds, self.norm_preds_done, self.udf_preds_done)
@@ -118,9 +125,11 @@ class ExpMtrcs_tbl(object):
 class ExpMtrcs_TM(object):
     
     def __init__(self, TM):
-        self.TM_name = TM.getTableName()
         self.exp_card = TM.getCard()
         self.exp_cum_cost = TM.getCum_cost()
+    
+    def get_TM(self):
+        return self.TM
     
     def set_exp_card(self, card):
         """ initially """
@@ -151,8 +160,8 @@ class ExpMtrcs_TM(object):
         return self.udf_preds_done
     
     def __str__(self):
-        return 'TM_name: {}; exp_card:{}; exp_cum_cost:{})'.format(self.TM_name, self.exp_card, self.exp_cum_cost)
+        return 'exp_card:{}; exp_cum_cost:{})'.format(self.exp_card, self.exp_cum_cost)
         
     def __repr__(self):
-        return 'TM_name: {}; exp_card:{}; exp_cum_cost:{})'.format(self.TM_name, self.exp_card, self.exp_cum_cost)
+        return 'exp_card:{}; exp_cum_cost:{})'.format(self.exp_card, self.exp_cum_cost)
                 

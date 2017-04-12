@@ -381,13 +381,53 @@ tmp_pred = [pred for pred in [pred for pred in A.getNormPreds() if pred.norm_sel
 tmp_pred[2].getSel()
 
 
-expMtrcsDict = emt.ExpMtrcs_dict()
 
+"""
 for table in MTM_tbls.union(LTM_tbls).union(RTM_tbls):
     expMtrcsTbl = emt.ExpMtrcs_tbl(table)
     expMtrcsDict.add_predicate_tbl(table, expMtrcsTbl)
+"""
+    
+def initiate_tbl_est_metrics(table, expMtrcsDict):
+    """ initiate table estimated metrics to _tbls """
+    expMtrcsDict.add_predicate_tbl(table, emt.ExpMtrcs_tbl(table))
+    
+def initiate_tbls_est_metrics(mJU, expMtrcsDict):
+    """ initiate estimated metrics of tables in micro JU """
+    for table in mJU.getMTM_tbls().union(mJU.getLTM_tbls()).union(mJU.getRTM_tbls()):
+        initiate_tbl_est_metrics(table, expMtrcsDict)
+
+def initiate_TM_est_metrics(TM, expMtrcsDict):
+    """ initiate estimated metrics of a TM to _TMs """
+    expMtrcsDict.add_predicate_TM(TM, emt.ExpMtrcs_TM(TM))
+
+def initiate_TMs_est_metrics(mJU, expMtrcsDict):
+    """ initiate estimated metrics of a TM to _TMs """
+    initiate_TM_est_metrics(mJU.getMidTM(), expMtrcsDict)
+    initiate_TM_est_metrics(mJU.getLTM(), expMtrcsDict)
+    initiate_TM_est_metrics(mJU.getRTM(), expMtrcsDict)
+    
+def initiate_tbls_TMs_est_mtrcs(mJU):
+    expMtrcsDict = emt.ExpMtrcs_dict()
+    initiate_tbls_est_metrics(mJU, expMtrcsDict)
+    initiate_TMs_est_metrics(mJU, expMtrcsDict)
+    return expMtrcsDict
+
+expMtrcsDict = initiate_tbls_TMs_est_mtrcs(mJU)
+
+
+expMtrcsDict.getTMGraph()
+for obj in expMtrcsDict.getTblGraph()[E]:
+    print (type(obj))
 
 expMtrcsDict
+
+
+expMtrcsDict.getTblGraph().keys()
+expMtrcsDict.getTblGraph()[E]
+
+
+
 
 
 """ E BE - B - BC - B - AB - A  """
@@ -406,10 +446,11 @@ p7 = LTM_tbls.difference(p3).difference(p1) # E
 
 
 
-
+res = []
 for table in p1_4:
-    [pred.sel for pred in [pred for pred in table.getNormPreds() if pred.norm_sel_bool == True]]
-    
+    res.append([pred.sel for pred in [pred for pred in table.getNormPreds() if pred.norm_sel_bool == True]])
+
+res    
 
 # nanoJU
 MTM.getCard()

@@ -5,7 +5,7 @@ Created on Wed Mar 15 11:27:31 2017
 @author: HKIM85
 """
 
-import ExpMtrcs_tbl as exmTbl
+import ExpMtrcs_tbl as emt
 
 class MicroJU(object):
     """ three TMs: midTM and otherTMs """
@@ -17,8 +17,33 @@ class MicroJU(object):
         self.expCard = 0.0
         self.expCost = 0.0
         self.isLegit = False
+        # may not want to initiate this object when it is obviously not productive 
+        self.expMtrcsDict = None 
         
-            
+    def initiate_tbl_est_metrics(self, table, expMtrcsDict):
+        """ initiate table estimated metrics to _tbls """
+        expMtrcsDict.add_predicate_tbl(table, emt.ExpMtrcs_tbl(table))
+    
+    def initiate_tbls_est_metrics(self, expMtrcsDict):
+        """ initiate estimated metrics of tables in micro JU """
+        for table in self.getMTM_tbls().union(self.getLTM_tbls()).union(self.getRTM_tbls()):
+            self.initiate_tbl_est_metrics(table, expMtrcsDict)
+
+    def initiate_TM_est_metrics(self, TM, expMtrcsDict):
+        """ initiate estimated metrics of a TM to _TMs """
+        expMtrcsDict.add_predicate_TM(TM, emt.ExpMtrcs_TM(TM))
+
+    def initiate_TMs_est_metrics(self, expMtrcsDict):
+        """ initiate estimated metrics of a TM to _TMs """
+        self.initiate_TM_est_metrics(self.getMidTM(), expMtrcsDict)
+        self.initiate_TM_est_metrics(self.getLTM(), expMtrcsDict)
+        self.initiate_TM_est_metrics(self.getRTM(), expMtrcsDict)
+    
+    def initiate_tbls_TMs_est_mtrcs(self):
+        self.expMtrcsDict = emt.ExpMtrcs_dict()
+        self.initiate_tbls_est_metrics(self.expMtrcsDict)
+        self.initiate_TMs_est_metrics(self.expMtrcsDict)
+
     def addOtherTMs(self, TM):
         if (self.isLegit == False):
             if (TM != self.midTM):
