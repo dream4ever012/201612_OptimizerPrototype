@@ -417,16 +417,22 @@ expMtrcsDict = initiate_tbls_TMs_est_mtrcs(mJU)
 
 
 expMtrcsDict.getTMGraph()
-for obj in expMtrcsDict.getTblGraph()[E]:
-    print (type(obj))
-
 expMtrcsDict
 
-
+""" 
+TEST:
+    deepcopy 
+when attrribute is called by getters 
+"""
+"""
 expMtrcsDict.getTblGraph().keys()
-expMtrcsDict.getTblGraph()[E]
-
-
+expMtrcsDict.getTblGraph()[E].get_exp_card() 
+expMtrcsDict.getTblGraph()[E].set_exp_card(10000)
+expMtrcsDict.getTblGraph()[E].get_exp_card() 
+expMtrcsDict.getTblGraph()[E].set_exp_card(E.getCard())
+expMtrcsDict.getTblGraph()[E].get_exp_card() 
+E.getCard()
+"""
 
 
 

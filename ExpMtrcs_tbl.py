@@ -15,16 +15,16 @@ class ExpMtrcs_dict(object):
     def __init__(self):
         """"""
         """ directed graph by default """
-        self._tbls = defaultdict(set)
-        self._TMs = defaultdict(set)
+        self._tbls = defaultdict()
+        self._TMs = defaultdict()
     
     def add_predicate_tbl(self, tbl, exp_mtrc_tbl):
         """ have to initiate it """
-        self._tbls[tbl].add(exp_mtrc_tbl)
+        self._tbls[tbl] = exp_mtrc_tbl
 
-    def add_predicate_TM(self, TM, exp_mtrc_tbl):
+    def add_predicate_TM(self, TM, exp_mtrc_TM):
         """ have to initiate it """
-        self._TMs[TM].add(exp_mtrc_tbl)
+        self._TMs[TM] = exp_mtrc_TM
         
     def getTblGraph(self):
         return self._tbls
@@ -58,10 +58,10 @@ class ExpMtrcs_tbl(object):
     def __init__(self, table):
         """ need to know current est. cum_cost/card and preds to do
             and if  """
-        """ deep or swallow copy """
+        """ deep or swallow copy 
+            TEST: attribute call by getters is call by value
         """
-        
-        
+        """
         """
         #self.table = table
         self.exp_card = table.getCard()
@@ -73,8 +73,10 @@ class ExpMtrcs_tbl(object):
         self.norm_preds_done = False
         self.udf_preds_done = False
     
+    """
     def get_table(self):
         return self.table
+    """
     
     def set_exp_card(self, card):
         """ initially """
