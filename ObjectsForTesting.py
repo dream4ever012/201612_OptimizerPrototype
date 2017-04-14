@@ -413,11 +413,8 @@ def initiate_tbls_TMs_est_mtrcs(mJU):
     initiate_TMs_est_metrics(mJU, expMtrcsDict)
     return expMtrcsDict
 
-expMtrcsDict = initiate_tbls_TMs_est_mtrcs(mJU)
+#expMtrcsDict = initiate_tbls_TMs_est_mtrcs(mJU)
 
-
-expMtrcsDict.getTMGraph()
-expMtrcsDict
 
 """ 
 TEST:
@@ -437,6 +434,7 @@ E.getCard()
 
 
 """ E BE - B - BC - B - AB - A  """
+"""
 p1 = MTM_tbls.intersection(LTM_tbls) # mid & LTM: B
 p2 = RTM_tbls.intersection(MTM_tbls) # RTM & mid: B
 p3 = LTM_tbls.intersection(RTM_tbls) # LTM & RTM: B
@@ -448,8 +446,127 @@ p3_4 = p3.difference(p4)
 p5 = MTM_tbls.difference(p1).difference(p2) # C
 p6 = RTM_tbls.difference(p2).difference(p3) # A
 p7 = LTM_tbls.difference(p3).difference(p1) # E
+"""
+"""
+Three sets
+"""
+p1_4 = MTM_tbls.intersection(LTM_tbls) # mid & LTM: B
+p2_4 = RTM_tbls.intersection(MTM_tbls) # RTM & mid: B
+p3_4 = LTM_tbls.intersection(RTM_tbls) # LTM & RTM: B
+p1 = p1_4.difference(RTM_tbls)
+p2 = p2_4.difference(LTM_tbls)
+p3 = p3_4.difference(MTM_tbls)
+p4 = MTM_tbls.intersection(LTM_tbls).intersection(RTM_tbls) # mid & LTM & RTM: B
+p4 = p1_4.intersection(p2_4)
+p5 = MTM_tbls.difference(p1_4).difference(p2)
+p6 = RTM_tbls.difference(p2_4).difference(p3)
+p7 = LTM_tbls.difference(p3_4).difference(p1)
 
 
+"""
+TWO SETS
+"""
+""" LTM = MTM """
+p1_4 = MTM_tbls.intersection(LTM_tbls) # mid & LTM: B
+p3_7 = LTM_tbls.difference(p1_4)
+p2_5 = MTM_tbls.difference(p1_4)
+
+"""
+for table in p1_4:
+    print table, table.getProdNormSel()
+"""
+mJU.initiate_tbls_TMs_est_mtrcs()
+
+
+
+table.getNormPreds()[0].getSel()
+list(p1_4)[0].getNormPreds()[0].getSel()
+list(p3_7)[0].getNormPreds()[0].getSel()
+list(p2_5)[0].getNormPreds()[0].getSel()
+
+A.getProdNormSel()
+B.getProdNormSel()
+C.getProdNormSel()
+D.getProdNormSel()
+E.getProdNormSel()
+
+"""
+for table in p3_7:
+    table.getProdNormSel()
+    mJU.getExpMtrcsDict().getTblGraph()[table]
+""" 
+
+def cost_norm_preds(table):
+    return table.card
+
+a = emt.ExpMtrcs_tbl(A)
+
+""" 
+mJU.getExpMtrcsDict().getTblGraph()[A]
+
+A.getProdNormSel()
+type(A.getNormPreds())
+table_est_mtrc = mJU.getExpMtrc_tbl(A)
+table_est_mtrc.set_exp_card(A.getCard())
+table_est_mtrc
+"""
+
+expMtrcsDict = mJU.getExpMtrcsDict()
+
+expMtrcsDict.getExpMtrc_tbl(A)
+
+""" clear norm_preds """
+"""
+# cost of table scan
+expMtrcsDict.getExpMtrc_tbl(A).add_exp_cum_cost(cost_norm_preds(A))
+# update est. cardinality
+expMtrcsDict.getExpMtrc_tbl(A).update_exp_card(A.getProdNormSel())
+# 
+preds = A.getNormPreds()
+expMtrcsDict.getExpMtrc_tbl(A).clear_all_norm_preds_todo(preds)
+expMtrcsDict.getExpMtrc_tbl(A)
+#getExpMtrc_tbl(A).get_norm_preds_todo() = [pred for pred in p_todo if pred not in preds]
+# set norm_pred_done: YES
+"""
+expMtrcsDict.getExpMtrc_tbl(A)
+
+
+for table in expMtrcsDict.getTblGraph().keys():
+    # cost of table scan
+    expMtrcsDict.getExpMtrc_tbl(table).add_exp_cum_cost(cost_norm_preds(table))
+    # update est. cardinality
+    expMtrcsDict.getExpMtrc_tbl(table).update_exp_card(table.getProdNormSel())
+    # clear predicate to_do list
+    expMtrcsDict.getExpMtrc_tbl(table).clear_all_norm_preds_todo(table.getNormPreds())
+
+
+
+
+mJU.getExpMtrcsDict().getExpMtrc_tbl(A).get_norm_preds_done()
+
+mJU.getExpMtrcsDict()
+
+
+
+"""
+for pred in A.getNormPreds():
+    table_est_mtrc.get_norm_preds_todo().remove(pred)
+"""
+p_todo = mJU.getExpMtrcsDict().getExpMtrc_tbl(A).get_norm_preds_todo()
+preds = A.getNormPreds()
+intersection_preds_todo = [pred for pred in p_todo if pred not in preds]
+len(intersection_preds_todo)
+
+p_todo = [pred for pred in p_todo if pred not in preds]
+
+#
+
+
+
+""" MTM = RTM """
+p2_4 = RTM_tbls.intersection(MTM_tbls) # RTM & mid: B
+P1_5 = MTM_tbls.difference(p2_4)
+p3_6 = RTM_tbls.difference(p2_4)
 
 
 res = []

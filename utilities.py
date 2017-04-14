@@ -16,3 +16,6 @@ class Utilities(object):
     def joinCost(self, table1, table2):
         table1.getCard
         None
+        
+    def cost_norm_preds(self, table):
+        return table.card

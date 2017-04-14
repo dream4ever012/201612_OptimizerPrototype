@@ -29,6 +29,9 @@ class ExpMtrcs_dict(object):
     def getTblGraph(self):
         return self._tbls
     
+    def getExpMtrc_tbl(self, table):
+        return self._tbls[table]
+    
     def getTMGraph(self):
         return self._TMs
       
@@ -60,8 +63,6 @@ class ExpMtrcs_tbl(object):
             and if  """
         """ deep or swallow copy 
             TEST: attribute call by getters is call by value
-        """
-        """
         """
         #self.table = table
         self.exp_card = table.getCard()
@@ -103,26 +104,28 @@ class ExpMtrcs_tbl(object):
     def get_norm_preds_todo(self):
         return self.norm_preds_todo
     
+    def clear_all_norm_preds_todo(self, preds_list):
+        """ let's keep it """
+        self.norm_preds_todo = [pred for pred in self.norm_preds_todo if pred not in preds_list]
+        self.set_norm_preds_done()
+    
     def get_udf_preds_todo(self):
         return self.udf_preds_todo
     
     def get_norm_preds_done(self):
-        if len(self.get_norm_preds_todo().getPreds()) == 0:
-            return True
-        else:
-            return False
+        return self.norm_preds_done
+    
+    def set_norm_preds_done(self):
+        self.norm_preds_done = True if len(self.norm_preds_todo) == 0 else False
         
     def get_udf_preds_done(self):
-        if len(self.get_udf_preds_todo().getPreds()) == 0:
-            return True
-        else:
-            return False
+        return self.udf_preds_done
     
     def __str__(self):
-        return 'exp_card:{}; exp_cum_cost:{}; (is_norm_preds:{}; preds_done:{}); (is_udf_preds:{}; preds_done:{})'.format(self.exp_card, self.exp_cum_cost,self.is_norm_preds, self.is_udf_preds, self.norm_preds_done, self.udf_preds_done)
+        return 'exp_card:{}; exp_cum_cost:{}; (is_norm_preds:{}; preds_done:{}; norm_preds_todo:{}); (is_udf_preds:{}; preds_done:{}; udf_preds_todo:{})'.format(self.exp_card, self.exp_cum_cost,self.is_norm_preds, self.norm_preds_done, self.norm_preds_todo, self.is_udf_preds, self.udf_preds_done, self.udf_preds_todo)
         
     def __repr__(self):
-        return 'exp_card:{}; exp_cum_cost:{}; (is_norm_preds:{}; preds_done:{}); (is_udf_preds:{}; preds_done:{})'.format(self.exp_card, self.exp_cum_cost,self.is_norm_preds, self.is_udf_preds, self.norm_preds_done, self.udf_preds_done)
+        return 'exp_card:{}; exp_cum_cost:{}; (is_norm_preds:{}; preds_done:{}; norm_preds_todo:{}); (is_udf_preds:{}; preds_done:{}; udf_preds_todo:{})'.format(self.exp_card, self.exp_cum_cost,self.is_norm_preds, self.norm_preds_done, self.norm_preds_todo, self.is_udf_preds, self.udf_preds_done, self.udf_preds_todo)
     
 class ExpMtrcs_TM(object):
     

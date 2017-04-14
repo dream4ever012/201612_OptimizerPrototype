@@ -114,6 +114,9 @@ class Table(object):
     def getNormPreds(self):
         return self.norm_preds.getPreds()
     
+    def getProdNormSel(self):
+        return self.norm_preds.getProdNormSel()
+    
     def getUDFPreds(self):
         return self.UDF_preds.getPreds()
     

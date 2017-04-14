@@ -22,7 +22,8 @@ class MicroJU(object):
         
     def initiate_tbl_est_metrics(self, table, expMtrcsDict):
         """ initiate table estimated metrics to _tbls """
-        expMtrcsDict.add_predicate_tbl(table, emt.ExpMtrcs_tbl(table))
+        #expMtrcs_tbl = emt.ExpMtrcs_tbl(table)
+        expMtrcsDict.add_predicate_tbl(table, emt.ExpMtrcs_tbl(table)) # expMtrcs_tbl)
     
     def initiate_tbls_est_metrics(self, expMtrcsDict):
         """ initiate estimated metrics of tables in micro JU """
@@ -43,6 +44,12 @@ class MicroJU(object):
         self.expMtrcsDict = emt.ExpMtrcs_dict()
         self.initiate_tbls_est_metrics(self.expMtrcsDict)
         self.initiate_TMs_est_metrics(self.expMtrcsDict)
+        
+    def getExpMtrcsDict(self):
+        return self.expMtrcsDict
+    
+    def getExpMtrc_tbl(self, table):
+        return self.getExpMtrcsDict().getExpMtrc_tbl(table)
 
     def addOtherTMs(self, TM):
         if (self.isLegit == False):

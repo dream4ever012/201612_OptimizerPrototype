@@ -147,9 +147,9 @@ class Predicates(object):
     
     def getProdNormSel(self):
         """ Get the product of selectivity of each predicate """
-        sel_list = [pred.sel for pred in [pred for pred in self.preds if pred.norm_sel_bool == True]]
+        #sel_list = 
         from numpy import prod
-        return prod(sel_list)
+        return prod([pred.sel for pred in [pred for pred in self.preds if pred.norm_sel_bool == True]])
     
     def getNormSelList(self):
         """ Get a list of selectivity of each predicate """
@@ -190,8 +190,6 @@ class Predicates(object):
                 if (pred.getUDFSelBool()==True):
                     res = True
         return res
-    
-
         
     def display_all(self):
         for pred in self.preds:
