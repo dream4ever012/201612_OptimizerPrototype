@@ -511,9 +511,7 @@ table_est_mtrc.set_exp_card(A.getCard())
 table_est_mtrc
 """
 
-expMtrcsDict = mJU.getExpMtrcsDict()
 
-expMtrcsDict.getExpMtrc_tbl(A)
 
 """ clear norm_preds """
 """
@@ -528,8 +526,13 @@ expMtrcsDict.getExpMtrc_tbl(A)
 #getExpMtrc_tbl(A).get_norm_preds_todo() = [pred for pred in p_todo if pred not in preds]
 # set norm_pred_done: YES
 """
-expMtrcsDict.getExpMtrc_tbl(A)
 
+""" clear norm predicates in mJU """
+# initiates 
+expMtrcsDict = mJU.getExpMtrcsDict()
+
+query.getKeys()
+query.getAllValues()
 
 for table in expMtrcsDict.getTblGraph().keys():
     # cost of table scan
@@ -539,7 +542,7 @@ for table in expMtrcsDict.getTblGraph().keys():
     # clear predicate to_do list
     expMtrcsDict.getExpMtrc_tbl(table).clear_all_norm_preds_todo(table.getNormPreds())
 
-
+expMtrcsDict
 
 
 mJU.getExpMtrcsDict().getExpMtrc_tbl(A).get_norm_preds_done()
