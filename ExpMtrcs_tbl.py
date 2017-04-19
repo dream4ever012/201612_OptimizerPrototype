@@ -64,7 +64,7 @@ class ExpMtrcs_tbl(object):
         """ deep or swallow copy 
             TEST: attribute call by getters is call by value
         """
-        #self.table = table
+        self.table = table
         self.exp_card = table.getCard()
         self.exp_cum_cost = table.getCum_cost()
         self.norm_preds_todo = table.getNormPreds()
@@ -74,10 +74,8 @@ class ExpMtrcs_tbl(object):
         self.norm_preds_done = False
         self.udf_preds_done = False
     
-    """
     def get_table(self):
         return self.table
-    """
     
     def set_exp_card(self, card):
         """ initially """
@@ -107,7 +105,6 @@ class ExpMtrcs_tbl(object):
     def clear_all_norm_preds_todo(self, preds_list):
         """ let's keep it """
         self.norm_preds_todo = [pred for pred in self.norm_preds_todo if pred not in preds_list]
-        self.set_norm_preds_done()
     
     def get_udf_preds_todo(self):
         return self.udf_preds_todo
@@ -130,6 +127,7 @@ class ExpMtrcs_tbl(object):
 class ExpMtrcs_TM(object):
     
     def __init__(self, TM):
+        self.TM = TM
         self.exp_card = TM.getCard()
         self.exp_cum_cost = TM.getCum_cost()
     

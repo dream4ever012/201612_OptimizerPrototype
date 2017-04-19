@@ -302,7 +302,7 @@ for table in midTM_tbls:
 """ TO-DO distinguish functions for rough """
 def cal_agg_exp_sel(tbl_set):
     """ A method that aggregate all predicates 
-    output when there is no predicates in a table 
+    output 1.0 when there is no predicates in a table 
     input: set of tbls """
     temp_sel = 1.0
     for table in list(tbl_set): temp_sel *= table.get_exp_norm_sel()
@@ -529,10 +529,11 @@ expMtrcsDict.getExpMtrc_tbl(A)
 
 """ clear norm predicates in mJU """
 # initiates 
+
+
 expMtrcsDict = mJU.getExpMtrcsDict()
 
-query.getKeys()
-query.getAllValues()
+""" initial set up """
 
 for table in expMtrcsDict.getTblGraph().keys():
     # cost of table scan
@@ -542,25 +543,108 @@ for table in expMtrcsDict.getTblGraph().keys():
     # clear predicate to_do list
     expMtrcsDict.getExpMtrc_tbl(table).clear_all_norm_preds_todo(table.getNormPreds())
 
-expMtrcsDict
-
-
+#expMtrcsDict
 mJU.getExpMtrcsDict().getExpMtrc_tbl(A).get_norm_preds_done()
-
 mJU.getExpMtrcsDict()
 
+p_todo = mJU.getExpMtrcsDict().getExpMtrc_tbl(A).get_norm_preds_todo()
+preds = A.getNormPreds()
+
+
+"""
+def update_normPreds_ExpMtrcsDict(mJU):
+    expMtrcsDict = mJU.getExpMtrcsDict()
+    for table in expMtrcsDict.getTblGraph().keys():
+        # cost of table scan
+        expMtrcsDict.getExpMtrc_tbl(table).add_exp_cum_cost(cost_norm_preds(table))
+        # update est. cardinality
+        expMtrcsDict.getExpMtrc_tbl(table).update_exp_card(table.getProdNormSel())
+        # clear predicate to_do list
+        expMtrcsDict.getExpMtrc_tbl(table).clear_all_norm_preds_todo(table.getNormPreds())
+""" 
+
+""" update estimated metrics in all mJU """
+"""
+for mJU in mJUlist.getMJUlist():
+    mJU.initiate_tbls_TMs_est_mtrcs()
+    update_normPreds_ExpMtrcsDict(mJU)
+"""
+
+
+
+
+mJUlist.getMJUlist()[0]
+
+
+
+mJU = mJUlist.getMJUlist()[4]
+mJU.getExpMtrc_tbl(A).get_norm_preds_todo()
+mJU.getExpMtrc_tbl(A).get_norm_preds_todo()
+
+mJU.getMidTM()
+mJU.getOtherTMs()
+
+LTM_tbls = mJU.getLTM_tbls()
+MTM_tbls = mJU.getMTM_tbls()
+RTM_tbls = mJU.getRTM_tbls()
+
+p1_4 = MTM_tbls.intersection(LTM_tbls) 
+p2_4 = RTM_tbls.intersection(MTM_tbls) 
+p3_4 = LTM_tbls.intersection(RTM_tbls)
+p1 = p1_4.difference(RTM_tbls)
+p2 = p2_4.difference(LTM_tbls)
+p3 = p3_4.difference(MTM_tbls)
+p4 = MTM_tbls.intersection(LTM_tbls).intersection(RTM_tbls)
+p4 = p1_4.intersection(p2_4)
+p5 = MTM_tbls.difference(p1_4).difference(p2)
+p6 = RTM_tbls.difference(p2_4).difference(p3)
+p7 = LTM_tbls.difference(p3_4).difference(p1)
+
+""" LTM = MTM """
+p1_4 = MTM_tbls.intersection(LTM_tbls) # mid & LTM: B
+p3_7 = LTM_tbls.difference(p1_4)
+p2_5 = MTM_tbls.difference(p1_4)
+
+""" 1) look for the estimated metric dictionary """ 
+[table.getProdNormSel() for table in p1_4]
+[table.getProdNormSel() for table in p3_7]
+[table.getProdNormSel() for table in p2_5]
+
+""" """
+
+""" """
+
+
+
+
+""" MTM = RTM """
+p2_4 = MTM_tbls.intersection(RTM_tbls) # mid & LTM: B
+p3_6 = RTM_tbls.difference(p2_4)
+p1_5 = MTM_tbls.difference(p2_4)
+
+[table.getProdNormSel() for table in p2_4]
+[table.getProdNormSel() for table in p3_6]
+[table.getProdNormSel() for table in p1_5]
+
+
+
+"""
+for table in p1_4:
+    print table, table.getProdNormSel()
+"""
+mJU.initiate_tbls_TMs_est_mtrcs()
 
 
 """
 for pred in A.getNormPreds():
     table_est_mtrc.get_norm_preds_todo().remove(pred)
-"""
-p_todo = mJU.getExpMtrcsDict().getExpMtrc_tbl(A).get_norm_preds_todo()
-preds = A.getNormPreds()
 intersection_preds_todo = [pred for pred in p_todo if pred not in preds]
 len(intersection_preds_todo)
 
 p_todo = [pred for pred in p_todo if pred not in preds]
+
+"""
+
 
 #
 
@@ -604,6 +688,7 @@ p5 = RTM_tbls.difference(midTM_tbls) # A
 
 
 """ predicate selectivity """
+"""
 ps1 = cal_agg_exp_sel(p1)
 ps2 = cal_agg_exp_sel(p2)
 ps3 = cal_agg_exp_sel(p3)
@@ -613,6 +698,7 @@ ps2_4 = cal_agg_exp_sel(p2_4)
 ps4_2 = cal_agg_exp_sel(p4_2)
 ps1_5 = cal_agg_exp_sel(p1_5)
 ps5_1 = cal_agg_exp_sel(p5_1)
+"""
 
 utls = utl.Utilities()
 
@@ -875,7 +961,6 @@ def div_int_lf_rg(mJU):
     LTM = microJUlist[0].getLTM()
     RTM = microJUlist[0].getRTM()
     
-    
     LTbls = query.getQuery_vk().getQueryGraph()[LTM]
     RTbls = query.getQuery_vk().getQueryGraph()[RTM]
     intersection = LTbls.intersection(RTbls)
@@ -923,7 +1008,7 @@ def processPredicate(tbls, TM, cost_join):
 
 def nano_opt(micro_JU, cost_join = cost_join_nl):
     """ I would like to build nano_opt not transfering actual object """
-    import copy
+
     """ input: micro_JU + self.cost_join_[method]"""
         
     """ optimization for 3+a tbls and 2 TMs """
