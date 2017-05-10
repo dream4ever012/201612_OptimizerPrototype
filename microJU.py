@@ -22,7 +22,6 @@ class MicroJU(object):
         if (self.isLegit == True):
             self.initiate_tbls_TMs_est_mtrcs() # after add other TMs
 
-
         
     def initiate_tbl_est_metrics(self, table):
         """ initiate table estimated metrics to _tbls """
@@ -72,6 +71,9 @@ class MicroJU(object):
         return self.isLegit
             
     def getMidTM(self):
+        return self.midTM
+
+    def getMTM(self):
         return self.midTM
     
     def getOtherTMs(self):
@@ -136,7 +138,10 @@ class MicroJUlist(object):
         else: # full (midTM + twoTMs) and partial microJU
             if (microJU not in self.mJUlist): self.mJUlist.append(microJU)
             
-            
+    def initiate_tbls_TMs_est_mtrcs(self):
+        for mJU in self.mJUlist:
+            mJU.initiate_tbls_TMs_est_mtrcs()
+        
     def getMicroJUlist(self, query, excldShort = True):
         import itertools
         """ midTM, linked TM set ==> combination of link set ==> create MicroJU 
@@ -159,6 +164,25 @@ class MicroJUlist(object):
                     #print 'microJU:', microJU
                     mJUlist.append(microJU)
         return mJUlist
+    
+    def cal_agg_prod_card(self, *TM_list):
+        """ A function that cal. product of cardinalities 
+            input: a list of TMs """
+        temp_card = 1
+        for TM in TM_list: temp_card *= TM.getCard()
+        return temp_card
+    
+    def get_conn_tbls(self, query, mJU):
+        """ get all connected tables to three tables in mJU 
+            input: query, mJU; output: tbls_set connected to the three TMs """
+        query_vk = query.getQuery_vk()
+        return query_vk.getValues(mJU.getMidTM()).union(query_vk.getValues(mJU.getLTM())).union(query_vk.getValues(mJU.getRTM()))
+    
+    def updateExpCard(self, query):
+        for mJU in self.mJUlist.getMJUlist():
+            midTM, LTM, RTM = mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()
+            res = self.cal_agg_exp_sel(self.get_conn_tbls(query, mJU)) * self.cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
+            mJU.setExpCard(res)
     
     def __repr__(self):
         return '{}; {}'.format(self.mJUlist, self.excldShort)

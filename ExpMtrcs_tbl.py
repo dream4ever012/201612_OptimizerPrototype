@@ -30,7 +30,11 @@ class ExpMtrcs_dict(object):
         return self._tbls
     
     def getExpMtrc_tbl(self, table):
-        return self._tbls[table]
+        """ KeyError bypass """
+        try:
+            return self._tbls[table]
+        except KeyError:
+            pass
     
     def getTMGraph(self):
         return self._TMs
