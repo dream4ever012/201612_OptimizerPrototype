@@ -18,38 +18,46 @@ class MicroJU(object):
         self.expCost = 0.0
         self.isLegit = False
         # may not want to initiate this object when it is obviously not productive 
-        self.expMtrcsDict = None 
+        self.expMtrcsDict = None
+        if (self.isLegit == True):
+            self.initiate_tbls_TMs_est_mtrcs() # after add other TMs
+
+
         
-    def initiate_tbl_est_metrics(self, table, expMtrcsDict):
+    def initiate_tbl_est_metrics(self, table):
         """ initiate table estimated metrics to _tbls """
         #expMtrcs_tbl = emt.ExpMtrcs_tbl(table)
-        expMtrcsDict.add_predicate_tbl(table, emt.ExpMtrcs_tbl(table)) # expMtrcs_tbl)
+        self.expMtrcsDict.add_predicate_tbl(table, emt.ExpMtrcs_tbl(table)) # expMtrcs_tbl)
     
-    def initiate_tbls_est_metrics(self, expMtrcsDict):
+    def initiate_tbls_est_metrics(self):
         """ initiate estimated metrics of tables in micro JU """
         for table in self.getMTM_tbls().union(self.getLTM_tbls()).union(self.getRTM_tbls()):
-            self.initiate_tbl_est_metrics(table, expMtrcsDict)
+            self.initiate_tbl_est_metrics(table)
 
-    def initiate_TM_est_metrics(self, TM, expMtrcsDict):
+    def initiate_TM_est_metrics(self, TM):
         """ initiate estimated metrics of a TM to _TMs """
-        expMtrcsDict.add_predicate_TM(TM, emt.ExpMtrcs_TM(TM))
+        self.expMtrcsDict.add_predicate_TM(TM, emt.ExpMtrcs_TM(TM))
 
-    def initiate_TMs_est_metrics(self, expMtrcsDict):
+    def initiate_TMs_est_metrics(self):
         """ initiate estimated metrics of a TM to _TMs """
-        self.initiate_TM_est_metrics(self.getMidTM(), expMtrcsDict)
-        self.initiate_TM_est_metrics(self.getLTM(), expMtrcsDict)
-        self.initiate_TM_est_metrics(self.getRTM(), expMtrcsDict)
+        self.initiate_TM_est_metrics(self.getMidTM())
+        self.initiate_TM_est_metrics(self.getLTM())
+        self.initiate_TM_est_metrics(self.getRTM())
     
     def initiate_tbls_TMs_est_mtrcs(self):
         self.expMtrcsDict = emt.ExpMtrcs_dict()
-        self.initiate_tbls_est_metrics(self.expMtrcsDict)
-        self.initiate_TMs_est_metrics(self.expMtrcsDict)
+        self.initiate_tbls_est_metrics()
+        self.initiate_TMs_est_metrics()
         
     def getExpMtrcsDict(self):
         return self.expMtrcsDict
     
     def getExpMtrc_tbl(self, table):
-        return self.getExpMtrcsDict().getExpMtrc_tbl(table)
+        try:
+            return self.expMtrcsDict.getExpMtrc_tbl(table)
+        except AttributeError:
+            pass
+        
 
     def addOtherTMs(self, TM):
         if (self.isLegit == False):
@@ -70,10 +78,10 @@ class MicroJU(object):
         return self.otherTMs
     
     def getLTM(self):
-        return list(self.otherTMs)[0]
+        return sorted(self.otherTMs)[0]
     
     def getRTM(self):
-        return list(self.otherTMs)[1]
+        return sorted(self.otherTMs)[1]
     
     def getMTM_tbls(self):
         return self.query.getQuery_vk().getValues(self.getMidTM())
@@ -127,6 +135,30 @@ class MicroJUlist(object):
             if (microJU not in self.mJUlist) and (microJU.getIsLegit()): self.mJUlist.append(microJU)
         else: # full (midTM + twoTMs) and partial microJU
             if (microJU not in self.mJUlist): self.mJUlist.append(microJU)
+            
+            
+    def getMicroJUlist(self, query, excldShort = True):
+        import itertools
+        """ midTM, linked TM set ==> combination of link set ==> create MicroJU 
+            ==> append to JUlist """
+        mJUlist = MicroJUlist()
+        queryGraph_vk = query.getQuery_vk().getQueryGraph()
+        for TM1 in queryGraph_vk.keys(): # first node      
+            #print '{}: {}'.format(TM1, 'start')   
+            otherTMs = set([])
+            for table1 in queryGraph_vk[TM1]: # tbl-link
+                #print '1 tl', table1, query._graph[table1]
+                for TM2 in query.getQueryGraph()[table1]:
+                    #print TM2
+                    otherTMs.add(TM2) # linked TM set
+                    #print 'otherTMs:', otherTMs
+                for TM3, TM4 in itertools.combinations(otherTMs, 2):
+                    microJU = MicroJU(TM1, query)
+                    microJU.addOtherTMs(TM3)
+                    microJU.addOtherTMs(TM4)
+                    #print 'microJU:', microJU
+                    mJUlist.append(microJU)
+        return mJUlist
     
     def __repr__(self):
         return '{}; {}'.format(self.mJUlist, self.excldShort)

@@ -475,7 +475,7 @@ p2_5 = MTM_tbls.difference(p1_4)
 for table in p1_4:
     print table, table.getProdNormSel()
 """
-mJU.initiate_tbls_TMs_est_mtrcs()
+
 
 
 
@@ -529,12 +529,13 @@ expMtrcsDict.getExpMtrc_tbl(A)
 
 """ clear norm predicates in mJU """
 # initiates 
-
-
+mJU.initiate_tbls_TMs_est_mtrcs()
 expMtrcsDict = mJU.getExpMtrcsDict()
+expMtrcsDict.getTblGraph()
+
 
 """ initial set up """
-
+"""
 for table in expMtrcsDict.getTblGraph().keys():
     # cost of table scan
     expMtrcsDict.getExpMtrc_tbl(table).add_exp_cum_cost(cost_norm_preds(table))
@@ -542,8 +543,18 @@ for table in expMtrcsDict.getTblGraph().keys():
     expMtrcsDict.getExpMtrc_tbl(table).update_exp_card(table.getProdNormSel())
     # clear predicate to_do list
     expMtrcsDict.getExpMtrc_tbl(table).clear_all_norm_preds_todo(table.getNormPreds())
-
+"""
 #expMtrcsDict
+
+expMtrcsDict.getExpMtrc_tbl(A).get_norm_preds_done()
+
+#mJU.initiate_tbls_TMs_est_mtrcs()
+
+list(mJU.otherTMs)[0]
+sorted(mJU.otherTMs)[0]
+
+mJU.expMtrcsDict
+
 mJU.getExpMtrcsDict().getExpMtrc_tbl(A).get_norm_preds_done()
 mJU.getExpMtrcsDict()
 
@@ -573,14 +584,25 @@ for mJU in mJUlist.getMJUlist():
 
 
 
-mJUlist.getMJUlist()[0]
+mJUlist.getMJUlist()[0].getExpMtrcsDict().getExpMtrc_tbl(A)
+
+mJUlist.getMJUlist()[1].getExpMtrcsDict().getExpMtrc_tbl(A)
 
 
+mJU.getRTM()
+mJU.getLTM()
+#mJU.initiate_tbls_TMs_est_mtrcs()
+mJU.getExpMtrcsDict().getExpMtrc_tbl(A)
+
+mJU.getExpMtrcsDict()
 
 mJU = mJUlist.getMJUlist()[4]
-mJU.getExpMtrc_tbl(A).get_norm_preds_todo()
-mJU.getExpMtrc_tbl(A).get_norm_preds_todo()
 
+"""
+mJU.getExpMtrc_tbl(A).get_norm_preds_todo()
+mJU.getExpMtrcsDict().getExpMtrc_tbl(A)
+mJU.getExpMtrc_tbl(A).get_norm_preds_todo()
+"""
 mJU.getMidTM()
 mJU.getOtherTMs()
 
