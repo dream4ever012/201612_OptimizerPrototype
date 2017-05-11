@@ -19,6 +19,9 @@ class Utilities(object):
         else:
             return TM2_card + TM1_card * TM2_card
     
+    def cost_table_scan(self, tbl_card):
+        return tbl_card
+    
     def joinCost(self, table1, table2):
         table1.getCard
         None

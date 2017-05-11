@@ -14,8 +14,8 @@ class MicroJU(object):
         self.midTM = midTM
         self.otherTMs = set([])
         #self.expectedCost = 0.0 """ TO-DO: has to go with Cost at distributed setting """
-        self.expCard = 0.0
-        self.expCost = 0.0
+        self.estCard = 0.0
+        self.estCost = 0.0
         self.isLegit = False
         # may not want to initiate this object when it is obviously not productive 
         self.expMtrcsDict = None
@@ -55,8 +55,7 @@ class MicroJU(object):
         try:
             return self.expMtrcsDict.getExpMtrc_tbl(table)
         except AttributeError:
-            pass
-        
+            pass    
 
     def addOtherTMs(self, TM):
         if (self.isLegit == False):
@@ -97,23 +96,33 @@ class MicroJU(object):
     def getTables(self, query):
         return self.getMTM_tbls().union(self.getLTM_tbls()).union(self.getRTM_tbls())
     
-    def getExpCard(self):
-        return self.expCard
+    def getEstCard(self):
+        return self.estCard
     
-    def setExpCard(self, expCard):
-        self.expCard = expCard
+    def setEstCard(self, estCard):
+        self.expCard = estCard
     
-    def addExpCard(self, thisCard):
-        self.expCard += thisCard
+    def addEstCard(self, thisCard):
+        self.estCard += thisCard
     
-    def getExpCost(self):
-        return self.expCost
+    def getEstCost(self):
+        return self.estCost
     
-    def addExpCost(self, thisCost):
-        self.expCost = thisCost
+    def addEstCost(self, thisCost):
+        self.estCost = thisCost
     
     def updateCard(self, expCard):
         self.expCard = expCard
+        
+    def update_normPreds_ExpMtrcsDict(self, cost_norm_preds):
+        """ input: cost_norm_preds function """
+        expMtrcsDict = self.getExpMtrcsDict()
+        for table in expMtrcsDict.getTblGraph().keys():
+            expMtrcs_tbl = expMtrcsDict.getExpMtrc_tbl(table)
+            expMtrcs_tbl.add_exp_cum_cost(cost_norm_preds(table))       # cost of table scan
+            expMtrcs_tbl.update_exp_card(table.getProdNormSel())        # update est. cardinality
+            expMtrcs_tbl.grab_all_norm_preds_todo(table.getNormPreds()) # clear predicate to_do list
+            expMtrcs_tbl.update_preds_done()                            # update norm_preds_done
     
     def __repr__(self):
         return '{}: {}; {}'.format(self.midTM, self.otherTMs, self.isLegit)
@@ -164,6 +173,10 @@ class MicroJUlist(object):
                     #print 'microJU:', microJU
                     mJUlist.append(microJU)
         return mJUlist
+    
+    def update_normPreds_ExpMtrcsDict_mJUlist(self):
+        for mJU in self.getMJUlist():
+            MicroJU.update_normPreds_ExpMtrcsDict(mJU)
     
     def cal_agg_prod_card(self, *TM_list):
         """ A function that cal. product of cardinalities 

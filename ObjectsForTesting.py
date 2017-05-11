@@ -332,15 +332,15 @@ midTM.getLowestFO(RTM)
 """ update expected """
 for mJU in mJUlist.getMJUlist():
     res = cal_agg_exp_sel(get_conn_tbls(query, mJU)) * cal_agg_prod_card(mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()) * mJU.getMidTM().getLowestFO(mJU.getLTM()).getFO() *mJU.getMidTM().getLowestFO(mJU.getRTM()).getFO()
-    mJU.setExpCard(res)
+    mJU.setEstCard(res)
 
 for mJU in mJUlist.getMJUlist():
     midTM, LTM, RTM = mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()
     res = cal_agg_exp_sel(get_conn_tbls(query, mJU)) * cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
-    mJU.setExpCard(res)
+    mJU.setEstCard(res)
 
-mJUlist.getMJUlist()[1].getExpCard()
-mJUlist.getMJUlist().sort(key = lambda mJU: mJU.getExpCard())
+mJUlist.getMJUlist()[1].getEstCard()
+mJUlist.getMJUlist().sort(key = lambda mJU: mJU.getEstCard())
 
 """
 for mJU in mJUlist.getMJUlist():
@@ -543,7 +543,7 @@ for table in expMtrcsDict.getTblGraph().keys():
 """
 #expMtrcsDict
 
-expMtrcsDict.getExpMtrc_tbl(A).get_norm_preds_done()
+#expMtrcsDict.getExpMtrc_tbl(A).get_norm_preds_done()
 
 #mJU.initiate_tbls_TMs_est_mtrcs()
 
@@ -552,24 +552,44 @@ sorted(mJU.otherTMs)[0]
 
 mJU.expMtrcsDict
 
-mJU.getExpMtrcsDict().getExpMtrc_tbl(A).get_norm_preds_done()
-mJU.getExpMtrcsDict()
+mJU.initiate_tbls_TMs_est_mtrcs()
+mJU.getExpMtrcsDict().getExpMtrc_tbl(E).get_norm_preds_done()
+mJU.getExpMtrcsDict().getExpMtrc_tbl(B)
 
-p_todo = mJU.getExpMtrcsDict().getExpMtrc_tbl(A).get_norm_preds_todo()
+p_todo = mJU.getExpMtrcsDict().getExpMtrc_tbl(B).get_norm_preds_todo()
 preds = A.getNormPreds()
 
+C.card
 
 
 def update_normPreds_ExpMtrcsDict(mJU):
     expMtrcsDict = mJU.getExpMtrcsDict()
     for table in expMtrcsDict.getTblGraph().keys():
+        expMtrcs_tbl = expMtrcsDict.getExpMtrc_tbl(table)
         # cost of table scan
-        expMtrcsDict.getExpMtrc_tbl(table).add_exp_cum_cost(cost_norm_preds(table))
+        expMtrcs_tbl.add_exp_cum_cost(cost_norm_preds(table))#.update_exp_card(table.getProdNormSel()).grab_all_norm_preds_todo(table.getNormPreds())
         # update est. cardinality
-        expMtrcsDict.getExpMtrc_tbl(table).update_exp_card(table.getProdNormSel())
+        expMtrcs_tbl.update_exp_card(table.getProdNormSel())
         # clear predicate to_do list
-        expMtrcsDict.getExpMtrc_tbl(table).clear_all_norm_preds_todo(table.getNormPreds())
- 
+        expMtrcs_tbl.grab_all_norm_preds_todo(table.getNormPreds())
+        # update norm_preds_done
+        expMtrcs_tbl.update_preds_done()
+
+def update_normPreds_ExpMtrcsDict_mJUlist(mJUlist):
+    for mJU in mJUlist.getMJUlist():
+        mJU.initiate_tbls_TMs_est_mtrcs()
+        update_normPreds_ExpMtrcsDict(mJU)
+
+mJU.initiate_tbls_TMs_est_mtrcs()
+mJU.getExpMtrcsDict().getTblGraph()[B]
+
+update_normPreds_ExpMtrcsDict(mJU)
+update_normPreds_ExpMtrcsDict_mJUlist(mJUlist)
+
+""" check if all norm_preds are cleared """
+mJUlist.getMJUlist()[0].getExpMtrcsDict()
+mJUlist.getMJUlist()[4].getExpMtrcsDict()
+mJUlist.getMJUlist()[8].getExpMtrcsDict()
 
 """ update estimated metrics in all mJU """
 """
@@ -588,7 +608,8 @@ TEST: initiate mJUlist ==> update all metrics
 mJUlist = getMicroJUlist(query)
 mJUlist.initiate_tbls_TMs_est_mtrcs() ### initiate
 
-mJU = mJUlist.getMJUlist()[1]
+mJU = mJUlist.getMJUlist()[7]
+mJU.getExpMtrcsDict().getExpMtrc_tbl(C)
 
 MTM = mJU.getMidTM() #BC
 LTM = mJU.getLTM() # BE
@@ -609,10 +630,7 @@ RTM_card = RTM.getCard()
 p3_4 = LTM_tbls.intersection(RTM_tbls) # LTM & RTM: B
 
 
-""" LTM = MTM """
-p1_4 = MTM_tbls.intersection(LTM_tbls) 
-p2_5 = MTM_tbls.difference(p1_4)
-p3_7 = LTM_tbls.difference(p1_4)
+
 
 
 def cal_agg_prod_card(*TM_list):
@@ -639,40 +657,85 @@ def toMTM(MTM_card, otherTM_card, MTM_tbls, otherTM_tbls):
 
 utility = utl.Utilities()
 
+
+def get_lower_est_cost_mJU(MTM_card, otherTM_card, tbls_Monly, tbls_otherOnly, tbls_intersection, costF_join = utility.cost_join_nl_by_card, norm_p_costF = utility.cost_table_scan):
+    MTM_card_ = MTM_card * getProdNormSel_set(tbls_Monly) # intermedicate MTM_card
+    otherTM_card_ = otherTM_card * getProdNormSel_set(tbls_otherOnly)
+    prodNSel_intrsctn = getProdNormSel_set(tbls_intersection)
+    
+    toMTM_bool = toMTM(MTM_card, otherTM_card, tbls_Monly, tbls_otherOnly)
+    
+    res = costF_join(MTM_card_ * prodNSel_intrsctn, otherTM_card_) if (toMTM_bool == True) else costF_join(MTM_card_, otherTM_card_ * prodNSel_intrsctn)
+    res += (norm_p_costF(MTM_card) + norm_p_costF(otherTM_card)) # norm_pred scan cost
+    return res
+    """
+    if (toMTM(MTM_card, otherTM_card, tbls_Monly, tbls_otherOnly) == True):
+        return costFunction(MTM_card_int * prodNormSel_intersection, otherTM_card_int)
+    else:
+        return costFunction(MTM_card_int, otherTM_card_int * prodNormSel_intersection)
+    """
+
+
+MTM = mJU.getMidTM() #BC
+LTM = mJU.getLTM() # BE
+RTM = mJU.getRTM() # AB
+
+
+def updatEstJnCst_mJU(mJU):
+    """ get connected tbls to each TM """
+    MTM_tbls = mJU.getMTM_tbls()
+    LTM_tbls = mJU.getLTM_tbls()
+    RTM_tbls = mJU.getRTM_tbls()
+
+    """
+    TWO SETS
+    """
+    MTM_card = MTM.getCard()
+    LTM_card = LTM.getCard()
+    RTM_card = RTM.getCard()
+
+    """ LTM = MTM """
+    p1_4 = MTM_tbls.intersection(LTM_tbls) 
+    p2_5 = MTM_tbls.difference(p1_4)
+    p3_7 = LTM_tbls.difference(p1_4)
+
+    """ MTM = RTM """
+    p2_4 = MTM_tbls.intersection(RTM_tbls)
+    p1_5 = MTM_tbls.difference(p2_4)
+    p3_6 = RTM_tbls.difference(p2_4)
+    """
+    p1 = p1_4.difference(RTM_tbls)
+    p3 = p3_4.difference(MTM_tbls)
+    p6 = RTM_tbls.difference(p2_4).difference(p3)
+    p7 = LTM_tbls.difference(p3_4).difference(p1)
+    """
+    M_LTM_cost = get_lower_est_cost_mJU(MTM_card, LTM_card, p2_5, p3_7, p1_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
+    M_RTM_cost = get_lower_est_cost_mJU(MTM_card, RTM_card, p1_5, p3_6, p2_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
+    mJU.addEstCard(min(M_LTM_cost,M_RTM_cost))
+    
+    
+
+
 """ cost of the two """
+"""
 if (toMTM(MTM_card, LTM_card, p2_5, p3_7) == True):
     print 'MTMfirst'
     ans = utility.cost_join_nl_by_card(MTM_card*getProdNormSel_set(p2_5) * getProdNormSel_set(p1_4),  LTM_card * getProdNormSel_set(p3_7))
 else:
     print 'otherTMfirst'
     ans = utility.cost_join_nl_by_card(MTM_card*getProdNormSel_set(p2_5),  LTM_card*getProdNormSel_set(p3_7) * getProdNormSel_set(p1_4))
-
 ans
-
-utility.cost_join_nl_by_card(1000, 10000)
-
-""" MTM = RTM """
-p2_4 = MTM_tbls.intersection(RTM_tbls)
-p1_5 = MTM_tbls.difference(p2_4)
-p3_6 = RTM_tbls.difference(p2_4)
-
-p1 = p1_4.difference(RTM_tbls)
-p3 = p3_4.difference(MTM_tbls)
-
-
-p6 = RTM_tbls.difference(p2_4).difference(p3)
-p7 = LTM_tbls.difference(p3_4).difference(p1)
 
 if (toMTM(MTM_card, RTM_card, p1_5, p3_6) == True):
     print 'MTMfirst'
-    ans1 = utility.cost_join_nl_by_card(MTM_card*getProdNormSel_set(p1_5) * getProdNormSel_set(p2_4),  LTM_card * getProdNormSel_set(p3_6))
+    ans1 = utility.cost_join_nl_by_card(MTM_card*getProdNormSel_set(p1_5) * getProdNormSel_set(p2_4),  RTM_card * getProdNormSel_set(p3_6))
 else:
     print 'otherTMfirst'
-    ans1 = utility.cost_join_nl_by_card(MTM_card*getProdNormSel_set(p1_5),  LTM_card*getProdNormSel_set(p3_6) * getProdNormSel_set(p2_4))
-
+    ans1 = utility.cost_join_nl_by_card(MTM_card*getProdNormSel_set(p1_5),  RTM_card*getProdNormSel_set(p3_6) * getProdNormSel_set(p2_4))
 ans1
+ans - ans1
+"""
 
-ans > ans1
 
 getProdNormSel_set(p1_4)
 

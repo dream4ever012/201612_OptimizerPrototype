@@ -8,6 +8,7 @@ Created on Sat Apr 01 20:05:25 2017
 """
 from collections import defaultdict
 import copy
+import utilities as utl
 
 class ExpMtrcs_dict(object):
     """ an attribute in microJU """
@@ -35,6 +36,8 @@ class ExpMtrcs_dict(object):
             return self._tbls[table]
         except KeyError:
             pass
+        """ AttributeError: 'NoneType' object has no attribute 'get_norm_preds_todo
+            """
     
     def getTMGraph(self):
         return self._TMs
@@ -104,9 +107,12 @@ class ExpMtrcs_tbl(object):
         return self.is_udf_preds
     
     def get_norm_preds_todo(self):
-        return self.norm_preds_todo
+        try:
+            return self.norm_preds_todo
+        except AttributeError:
+            pass
     
-    def clear_all_norm_preds_todo(self, preds_list):
+    def grab_all_norm_preds_todo(self, preds_list):
         """ let's keep it """
         self.norm_preds_todo = [pred for pred in self.norm_preds_todo if pred not in preds_list]
     
@@ -116,12 +122,19 @@ class ExpMtrcs_tbl(object):
     def get_norm_preds_done(self):
         return self.norm_preds_done
     
-    def set_norm_preds_done(self):
-        self.norm_preds_done = True if len(self.norm_preds_todo) == 0 else False
+    def update_norm_preds_done(self):
+        self.norm_preds_done = True if ((len(self.norm_preds_todo) == 0)  & (self.is_norm_preds)) else False
         
     def get_udf_preds_done(self):
         return self.udf_preds_done
     
+    def update_udf_preds_done(self):
+        self.udf_preds_done = True if ((len(self.udf_preds_todo) == 0)  & (self.is_udf_preds)) else False
+        
+    def update_preds_done(self):
+        self.update_norm_preds_done()
+        self.update_udf_preds_done()
+       
     def __str__(self):
         return 'exp_card:{}; exp_cum_cost:{}; (is_norm_preds:{}; preds_done:{}; norm_preds_todo:{}); (is_udf_preds:{}; preds_done:{}; udf_preds_todo:{})'.format(self.exp_card, self.exp_cum_cost,self.is_norm_preds, self.norm_preds_done, self.norm_preds_todo, self.is_udf_preds, self.udf_preds_done, self.udf_preds_todo)
         
