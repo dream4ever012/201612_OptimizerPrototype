@@ -577,14 +577,17 @@ def update_normPreds_ExpMtrcsDict(mJU):
 
 def update_normPreds_ExpMtrcsDict_mJUlist(mJUlist):
     for mJU in mJUlist.getMJUlist():
-        mJU.initiate_tbls_TMs_est_mtrcs()
-        update_normPreds_ExpMtrcsDict(mJU)
+        mJU.initiate_tbls_TMs_est_mtrcs()   # initiate tbls TM metrics
+        update_normPreds_ExpMtrcsDict(mJU)  # update table scan cost, update exp card, update predicate to do list, update nor_pred_done boolean
 
 mJU.initiate_tbls_TMs_est_mtrcs()
 mJU.getExpMtrcsDict().getTblGraph()[B]
 
 update_normPreds_ExpMtrcsDict(mJU)
 update_normPreds_ExpMtrcsDict_mJUlist(mJUlist)
+
+for mJU in mJUlist.getMJUlist():
+    print mJU
 
 """ check if all norm_preds are cleared """
 mJUlist.getMJUlist()[0].getExpMtrcsDict()
