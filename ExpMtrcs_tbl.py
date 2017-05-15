@@ -80,6 +80,7 @@ class ExpMtrcs_tbl(object):
         self.is_udf_preds = table.get_is_udf()
         self.norm_preds_done = False
         self.udf_preds_done = False
+        self.prod_norm_sel = table.getProdNormSel()
     
     def get_table(self):
         return self.table
@@ -111,6 +112,9 @@ class ExpMtrcs_tbl(object):
             return self.norm_preds_todo
         except AttributeError:
             pass
+        
+    def getProdNormSel(self):
+        return self.prod_norm_sel
     
     def grab_all_norm_preds_todo(self, preds_list):
         """ let's keep it """

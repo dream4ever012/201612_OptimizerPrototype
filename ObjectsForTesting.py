@@ -562,6 +562,8 @@ preds = A.getNormPreds()
 C.card
 
 
+
+
 def update_normPreds_ExpMtrcsDict(mJU):
     expMtrcsDict = mJU.getExpMtrcsDict()
     for table in expMtrcsDict.getTblGraph().keys():
@@ -583,11 +585,38 @@ def update_normPreds_ExpMtrcsDict_mJUlist(mJUlist):
 mJU.initiate_tbls_TMs_est_mtrcs()
 mJU.getExpMtrcsDict().getTblGraph()[B]
 
-update_normPreds_ExpMtrcsDict(mJU)
+mJU.getExpMtrcsDict().getTMGraph()
+
+#update_normPreds_ExpMtrcsDict(mJU)
 update_normPreds_ExpMtrcsDict_mJUlist(mJUlist)
 
+
+
+
+"""
+e.g) AB  join BC
+"""
+res = {x:AB.getFanouts().getGraph()[x] for x in AB.getFanouts().getGraph() if x in BC.getFanouts().getGraph()}
+mJU 
+
+res1  = [x[0] for x in res.values()]
+res1.sort(key=lambda fanout: fanout.getFO()) # get fanout 
+
+res1[0].getFO()
+
+# cost of join
+
+
+# est. card.
+#res1[0].getFO()*
+
+
+
+"""
 for mJU in mJUlist.getMJUlist():
     print mJU
+""" 
+mJUlist.getMJUlist()[10].getExpMtrcsDict()
 
 """ check if all norm_preds are cleared """
 mJUlist.getMJUlist()[0].getExpMtrcsDict()
@@ -661,14 +690,13 @@ def toMTM(MTM_card, otherTM_card, MTM_tbls, otherTM_tbls):
 utility = utl.Utilities()
 
 
-def get_lower_est_cost_mJU(MTM_card, otherTM_card, tbls_Monly, tbls_otherOnly, tbls_intersection, costF_join = utility.cost_join_nl_by_card, norm_p_costF = utility.cost_table_scan):
+def get_lower_est_cost_mJU(MTM_card, otherTM_card, tbls_Monly, tbls_otherOnly, tbls_intersection, costF_join, norm_p_costF):
+    """ input: MTM_card, otherTM_card, tbls_Monly, tbls_otherOnly, tbls_intersection, """
     MTM_card_ = MTM_card * getProdNormSel_set(tbls_Monly) # intermedicate MTM_card
     otherTM_card_ = otherTM_card * getProdNormSel_set(tbls_otherOnly)
     prodNSel_intrsctn = getProdNormSel_set(tbls_intersection)
     
-    toMTM_bool = toMTM(MTM_card, otherTM_card, tbls_Monly, tbls_otherOnly)
-    
-    res = costF_join(MTM_card_ * prodNSel_intrsctn, otherTM_card_) if (toMTM_bool == True) else costF_join(MTM_card_, otherTM_card_ * prodNSel_intrsctn)
+    res = costF_join(MTM_card_ * prodNSel_intrsctn, otherTM_card_) if (MTM_card_ <= otherTM_card_) else costF_join(MTM_card_, otherTM_card_ * prodNSel_intrsctn)
     res += (norm_p_costF(MTM_card) + norm_p_costF(otherTM_card)) # norm_pred scan cost
     return res
     """
@@ -678,13 +706,61 @@ def get_lower_est_cost_mJU(MTM_card, otherTM_card, tbls_Monly, tbls_otherOnly, t
         return costFunction(MTM_card_int, otherTM_card_int * prodNormSel_intersection)
     """
 
+    def cost_join_nl_by_card(self, TM1_card, TM2_card):
+        if (TM1_card <= TM2_card):
+            return TM1_card + TM1_card * TM2_card
+        else:
+            return TM2_card + TM1_card * TM2_card
 
+A.getProdNormSel()
+B.getProdNormSel()
+C.getProdNormSel()
+D.getProdNormSel()
+
+""" ############################################### """
+""" TEST: get_lower_est_cost_mJU                    """
+""" ############################################### """
+"""
+MTM_card = 6000
+otherTM_card = 10000
+MTM_card_ = MTM_card * getProdNormSel_set({A}) # intermedicate MTM_card
+otherTM_card_ = otherTM_card * getProdNormSel_set({B,C})
+prodNSel_intrsctn = getProdNormSel_set({D})
+    
+
+res = utility.cost_join_nl_by_card(MTM_card_ * prodNSel_intrsctn, otherTM_card_) if (MTM_card_ <= otherTM_card_) else utility.cost_join_nl_by_card(MTM_card_, otherTM_card_ * prodNSel_intrsctn)
+res += ( utility.cost_table_scan(MTM_card) +  utility.cost_table_scan(otherTM_card)) # n
+
+get_lower_est_cost_mJU(6000, 10000, {A} , {B, C}, {D}, utility.cost_join_nl_by_card, utility.cost_table_scan)
+"""
 MTM = mJU.getMidTM() #BC
 LTM = mJU.getLTM() # BE
 RTM = mJU.getRTM() # AB
 
+mJU.getEstJnCst_mJU()
 
-def updatEstJnCst_mJU(mJU):
+
+MTM_tbls = mJU.getMTM_tbls()
+LTM_tbls = mJU.getLTM_tbls()
+RTM_tbls = mJU.getRTM_tbls()
+
+MTM_card = MTM.getCard()
+LTM_card = LTM.getCard()
+RTM_card = RTM.getCard()
+
+p1_4 = MTM_tbls.intersection(LTM_tbls) 
+p2_5 = MTM_tbls.difference(p1_4)
+p3_7 = LTM_tbls.difference(p1_4)
+
+p2_4 = MTM_tbls.intersection(RTM_tbls)
+p1_5 = MTM_tbls.difference(p2_4)
+p3_6 = RTM_tbls.difference(p2_4)
+
+M_LTM_cost = get_lower_est_cost_mJU(MTM_card, LTM_card, p2_5, p3_7, p1_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
+M_RTM_cost = get_lower_est_cost_mJU(MTM_card, RTM_card, p1_5, p3_6, p2_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
+mJU.addEstCost(min(M_LTM_cost,M_RTM_cost))
+
+def getEstJnCst_mJU(mJU):
     """ get connected tbls to each TM """
     MTM_tbls = mJU.getMTM_tbls()
     LTM_tbls = mJU.getLTM_tbls()
@@ -714,9 +790,59 @@ def updatEstJnCst_mJU(mJU):
     """
     M_LTM_cost = get_lower_est_cost_mJU(MTM_card, LTM_card, p2_5, p3_7, p1_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
     M_RTM_cost = get_lower_est_cost_mJU(MTM_card, RTM_card, p1_5, p3_6, p2_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
-    mJU.addEstCard(min(M_LTM_cost,M_RTM_cost))
+    #mJU.addEstCard(min(M_LTM_cost,M_RTM_cost))
+    return (min(M_LTM_cost,M_RTM_cost))
+
+# get estCost
+
+def updateEstCardCost_mJU(mJUlist, query):
+    for mJU in mJUlist.getMJUlist():
+        """ update estCost """
+        estCost = getEstJnCst_mJU(mJU)
+        mJU.addEstCost(estCost)
+        
+        """ update estCard """
+        midTM, LTM, RTM = mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()
+        res = cal_agg_exp_sel(get_conn_tbls(query, mJU)) * cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
+        mJU.setEstCard(res)
+
     
+# 
+def mJUlist_sort_by_cost(mJUlist):
+    mJUlist.getMJUlist().sort(key=lambda mJU: mJU.getEstCost())
+
+def mJUlist_sort_by_card(mJUlist):
+    mJUlist.getMJUlist().sort(key = lambda mJU: mJU.getEstCard())
+
+"""
+Recursively
+"""
+
+
+
+
+mJU
+midTM, LTM, RTM = mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()
+res = cal_agg_exp_sel(get_conn_tbls(query, mJU)) * cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
+mJU.setEstCard(res)
+
+mJUlist.getMJUlist()[1].getEstCard()
+
+
+for mJU in mJUlist.getMJUlist():
+    print mJU, mJU.getEstCost(), mJU.getEstCard()
     
+
+
+
+#getEstJnCst_mJU(mJU)
+#mJU.addEstCost(mJU.getEstJnCst_mJU())
+mJU.getEstCost()
+#mJU.estCost = 0.0
+
+mJU.getEstCard()
+
+
 
 
 """ cost of the two """

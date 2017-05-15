@@ -6,6 +6,8 @@ Created on Wed Mar 15 11:27:31 2017
 """
 
 import ExpMtrcs_tbl as emt
+import utilities as utl
+utl1 = utl.Utilities()
 
 class MicroJU(object):
     """ three TMs: midTM and otherTMs """
@@ -100,7 +102,7 @@ class MicroJU(object):
         return self.estCard
     
     def setEstCard(self, estCard):
-        self.expCard = estCard
+        self.estCard = estCard
     
     def addEstCard(self, thisCard):
         self.estCard += thisCard
@@ -109,7 +111,7 @@ class MicroJU(object):
         return self.estCost
     
     def addEstCost(self, thisCost):
-        self.estCost = thisCost
+        self.estCost += thisCost
     
     def updateCard(self, expCard):
         self.expCard = expCard
@@ -123,6 +125,63 @@ class MicroJU(object):
             expMtrcs_tbl.update_exp_card(table.getProdNormSel())        # update est. cardinality
             expMtrcs_tbl.grab_all_norm_preds_todo(table.getNormPreds()) # clear predicate to_do list
             expMtrcs_tbl.update_preds_done()                            # update norm_preds_done
+    
+    
+    def getProdNormSel_set(self, table_set):
+        prod_sel = 1.0
+        for tbl1 in table_set: prod_sel *= tbl1.getProdNormSel()
+        return prod_sel
+      
+    def cost_join_nl_by_card(self, TM1_card, TM2_card):
+        if (TM1_card <= TM2_card):
+            return TM1_card + TM1_card * TM2_card
+        else:
+            return TM2_card + TM1_card * TM2_card
+    
+    
+    def get_lower_est_cost_mJU(self, MTM_card, otherTM_card, tbls_Monly, tbls_otherOnly, tbls_intersection, costF_join, norm_p_costF):
+        """ get lower cost """
+        MTM_card_ = MTM_card * self.getProdNormSel_set(tbls_Monly) # intermedicate MTM_card
+        otherTM_card_ = otherTM_card * self.getProdNormSel_set(tbls_otherOnly)
+        prodNSel_intrsctn = self.getProdNormSel_set(tbls_intersection)
+        res = None
+        res = costF_join(MTM_card_ * prodNSel_intrsctn, otherTM_card_) if (MTM_card_ <= otherTM_card_) else costF_join(MTM_card_, otherTM_card_ * prodNSel_intrsctn)
+        res += (norm_p_costF(MTM_card) + norm_p_costF(otherTM_card)) # norm_pred scan cost
+        return res
+        
+    def getEstJnCst_mJU(self, costF_join = utl1.cost_join_nl_by_card, norm_p_costF = utl1.cost_table_scan):
+        
+        """ get connected tbls to each TM """
+        MTM_tbls = self.getMTM_tbls()
+        LTM_tbls = self.getLTM_tbls()
+        RTM_tbls = self.getRTM_tbls()
+
+        """
+        TWO SETS
+        """
+        MTM_card = self.getMTM().getCard()
+        LTM_card = self.getLTM().getCard()
+        RTM_card = self.getRTM().getCard()
+
+        """ LTM = MTM """
+        p1_4 = MTM_tbls.intersection(LTM_tbls) 
+        p2_5 = MTM_tbls.difference(p1_4)
+        p3_7 = LTM_tbls.difference(p1_4)
+
+        """ MTM = RTM """
+        p2_4 = MTM_tbls.intersection(RTM_tbls)
+        p1_5 = MTM_tbls.difference(p2_4)
+        p3_6 = RTM_tbls.difference(p2_4)
+        """
+        p1 = p1_4.difference(RTM_tbls)
+        p3 = p3_4.difference(MTM_tbls)
+        p6 = RTM_tbls.difference(p2_4).difference(p3)
+        p7 = LTM_tbls.difference(p3_4).difference(p1)
+        """
+        M_LTM_cost = self.get_lower_est_cost_mJU(MTM_card, LTM_card, p2_5, p3_7, p1_4, costF_join, norm_p_costF)
+        M_RTM_cost = self.get_lower_est_cost_mJU(MTM_card, RTM_card, p1_5, p3_6, p2_4, costF_join, norm_p_costF)
+        #mJU.addEstCard(min(M_LTM_cost,M_RTM_cost))
+        return (min(M_LTM_cost,M_RTM_cost))
     
     def __repr__(self):
         return '{}: {}; {}'.format(self.midTM, self.otherTMs, self.isLegit)
@@ -196,6 +255,16 @@ class MicroJUlist(object):
             midTM, LTM, RTM = mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()
             res = self.cal_agg_exp_sel(self.get_conn_tbls(query, mJU)) * self.cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
             mJU.setExpCard(res)
+    def updateEstCardCost_mJU(self,query):
+        for mJU in self.mJUlist.getMJUlist():
+            """ update estCost """
+            estCost = mJU.getEstJnCst_mJU()
+            mJU.addEstCost(estCost)
+            
+            """ update estCard """
+            midTM, LTM, RTM = mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()
+            res = self.cal_agg_exp_sel(self.get_conn_tbls(query, mJU)) * self.cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
+            mJU.setEstCard(res)
     
     def __repr__(self):
         return '{}; {}'.format(self.mJUlist, self.excldShort)
