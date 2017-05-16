@@ -330,6 +330,7 @@ midTM.getLowestFO(RTM)
 
 
 """ update expected """
+"""
 for mJU in mJUlist.getMJUlist():
     res = cal_agg_exp_sel(get_conn_tbls(query, mJU)) * cal_agg_prod_card(mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()) * mJU.getMidTM().getLowestFO(mJU.getLTM()).getFO() *mJU.getMidTM().getLowestFO(mJU.getRTM()).getFO()
     mJU.setEstCard(res)
@@ -341,6 +342,7 @@ for mJU in mJUlist.getMJUlist():
 
 mJUlist.getMJUlist()[1].getEstCard()
 mJUlist.getMJUlist().sort(key = lambda mJU: mJU.getEstCard())
+"""
 
 """
 for mJU in mJUlist.getMJUlist():
@@ -795,7 +797,7 @@ def getEstJnCst_mJU(mJU):
 
 # get estCost
 
-def updateEstCardCost_mJU(mJUlist, query):
+def updateEstCostCardCost_mJU(mJUlist, query):
     for mJU in mJUlist.getMJUlist():
         """ update estCost """
         estCost = getEstJnCst_mJU(mJU)
@@ -806,13 +808,15 @@ def updateEstCardCost_mJU(mJUlist, query):
         res = cal_agg_exp_sel(get_conn_tbls(query, mJU)) * cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
         mJU.setEstCard(res)
 
-    
+   
 # 
 def mJUlist_sort_by_cost(mJUlist):
     mJUlist.getMJUlist().sort(key=lambda mJU: mJU.getEstCost())
 
 def mJUlist_sort_by_card(mJUlist):
     mJUlist.getMJUlist().sort(key = lambda mJU: mJU.getEstCard())
+
+
 
 """
 Recursively
