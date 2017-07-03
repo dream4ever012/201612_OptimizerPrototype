@@ -254,9 +254,10 @@ BE = tbl.TM(table_name='BE', card=900000, cum_cost=0)
 CE = tbl.TM(table_name='CE', card=1200000, cum_cost=0)
 
 conn = [(A, AB), (B, AB), (B, BC), (C, BC), (B, BE), (C, CE), (C, CD), (D, CD), (E, BE), (E, CE)]
+query = qry.Query(conn, directed=True) 
 #conn = [(A, AB), (B, AB), (B, BC), (C, BC)]
 #conn = [(A, AB), (B, AB)]
-query = qry.Query(conn, directed=True) 
+
 
 
 """ ############################################### """
@@ -824,6 +825,7 @@ for mJU in mJUlist.getMJUlist():
 
 updateEstCostCardCost_mJU(mJUlist,query)
 mJUlist_sort_by_cost(mJUlist)
+mJUlist_sort_by_card(mJUlist)
 
 """
 Recursively
@@ -1048,7 +1050,7 @@ utls.cost_join_nl(midTM, LTM)
 #utls.cost_join_nl()
 
 
-
+query
 
 midTM = mJUlist.getMJUlist()[0].getMidTM()
 LTM = mJUlist.getMJUlist()[0].getLTM()
