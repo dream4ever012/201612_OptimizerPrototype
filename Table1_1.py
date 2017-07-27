@@ -11,6 +11,9 @@ Created on Wed Dec 14 11:28:09 2016
 import predicate as pds
 import Fanout as fo
 
+from itertools import chain
+from collections import defaultdict
+
 class TM(object):   
     def __init__(self, table_name='DFT', card=0, cum_cost=0):
         self.table_name = table_name
@@ -69,17 +72,45 @@ class TM(object):
     
     
 class TM_clstr(TM):
-    def __init__(self, TM1, TM2, exp_mtrcs_dict):
+    def __init__(self, mJU):
         """ query object contains TM_cluster query """
-        card, cum_cost = self.query_clstr.microOpt()
+        card, cum_cost = mJU.getEstCard(), mJU.getEstCost()
+        lTM, mTM, rTM = mJU.getLTM(), mJU.getMTM(), mJU.getRTM()
         """ TO-DO: built how to combine all names, still """
-        TM.__init__(self, table_name=('{}_{}_{}'.format(TM1.getTableName(), TM1.getTableName(), 'clstr')), card=card,
-                    cum_cost = cum_cost, fanouts = fo.Fanouts())
-        self.exp_metrics_dict = exp_mtrcs_dict
+        TM.__init__(self, table_name=('{}_{}_{}'.format(lTM.getTableName(), mTM.getTableName(), rTM.getTableName())), card=card, cum_cost = cum_cost)
         self.isClstr = True
-        
+        self.clstrdTMs = set([])
+        self.initClstrdTMs(lTM, mTM, rTM)
+        self.fanouts = fo.Fanouts()
+        self.aggregateFanouts(mJU)
+  
     def getIsClstr(self):
         return self.isClstr
+    
+    def getclstrdTMs(self):
+        return self.clstrdTMs
+
+    def initClstrdTMs(self, lTM, mTM, rTM):
+        """ get all clustered TM """
+        temp = set([])
+        self.clstrdTMs = ((temp.union(lTM.getclstrdTMs()) if lTM.isClstr == True else set([])).union((mTM.getclstrdTMs()) if mTM.isClstr == True else set([]))).union((rTM.getclstrdTMs()) if rTM.isClstr == True else set([]))
+    
+    def hasIdtclTMs(self, other):
+        return self.getclstrdTMs() == other.getclstredTMs()
+    
+    def aggregateFanouts(self, mJU):
+        res = defaultdict(list, dict(chain(mJU.getMTM().getFanouts().getGraph().items(), 
+                                           mJU.getLTM().getFanouts().getGraph().items(), 
+                                           mJU.getRTM().getFanouts().getGraph().items() )))
+        
+        self.fanouts.setGraph(res)
+
+    def __eq__(self, other):
+        if other.getIsClstr() ==True:
+            return self.clstrdTMs == other.clstrdTMs
+        else: 
+            return False
+
 
 class Table(object):    
     def __init__(self, table_name='DFT', card=0, cum_cost=0, 

@@ -74,6 +74,8 @@ class Fanouts(object):
             FOs_list.append(self.getFOs(tbl))
         return FOs_list
 
+    def setGraph(self, graph):
+        self._graph = graph
     
     def mergeFOs(self, other):
         """ TO-DO: testing """

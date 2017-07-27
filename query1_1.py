@@ -39,14 +39,11 @@ class Query(object):
 
     def add_connections(self, connections):
         """ Add connections (list of tuple pairs) to graph """
-        
         for node1, node2 in connections:
             self.add(node1, node2)
         
-        
     def update_fanouts(self, connections):
         """ update all fanouts and then assign those to each TM accordingly """
-
         fanouts = fo.Fanouts()
         conn = copy.deepcopy(connections)
         fanouts.add_connections(conn)
@@ -157,6 +154,11 @@ class Query(object):
         """ swap key-value pair """
         conn = [(val,key) for key in self._graph for val in self._graph[key]]
         return Query(conn, directed=True, isVK = True)
+    
+    def resetKeyVal(self):
+        """ input query object """
+        """ reset(update) keyVal graph after TM_clustr update """
+        self.query_vk = self.swapKeyVal()
     
     def displayFOs(query):
         for TM in query.getAllValues():

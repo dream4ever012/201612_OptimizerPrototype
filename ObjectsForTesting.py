@@ -12,6 +12,7 @@ import Fanout as fo
 import microJU as mju
 import utilities as utl
 import ExpMtrcs_tbl as emt
+import time
 """                      """
 """ PREDICATE/PREDICATES """
 """                      """
@@ -214,7 +215,7 @@ def getMicroJUlist(query, excldShort = True):
     import itertools
     """ midTM, linked TM set ==> combination of link set ==> create MicroJU 
         ==> append to JUlist """
-    mJUlist = mju.MicroJUlist()
+    mJUlist = mju.MicroJUlist([])
     queryGraph_vk = query.getQuery_vk().getQueryGraph()
     for TM1 in queryGraph_vk.keys(): # first node      
         #print '{}: {}'.format(TM1, 'start')   
@@ -225,6 +226,7 @@ def getMicroJUlist(query, excldShort = True):
                 #print TM2
                 otherTMs.add(TM2) # linked TM set
             #print 'otherTMs:', otherTMs
+            if excldShort == True: otherTMs.discard(TM1) 
             for TM3, TM4 in itertools.combinations(otherTMs, 2):
                 microJU = mju.MicroJU(TM1, query)
                 microJU.addOtherTMs(TM3)
@@ -235,7 +237,7 @@ def getMicroJUlist(query, excldShort = True):
 
 """ for testing only """
 """ delete after testing"""
-
+#tic = time.time()*1000000000
 preds0 = prep_preds0()
 preds1 = prep_preds1()
 preds2 = prep_preds2()
@@ -253,8 +255,11 @@ CD = tbl.TM(table_name='CD', card=850000, cum_cost=0)
 BE = tbl.TM(table_name='BE', card=900000, cum_cost=0)
 CE = tbl.TM(table_name='CE', card=1200000, cum_cost=0)
 
+
 conn = [(A, AB), (B, AB), (B, BC), (C, BC), (B, BE), (C, CE), (C, CD), (D, CD), (E, BE), (E, CE)]
 query = qry.Query(conn, directed=True) 
+#toc= time.time()*1000000000
+#print "query graph fetch", (toc-tic)
 #conn = [(A, AB), (B, AB), (B, BC), (C, BC)]
 #conn = [(A, AB), (B, AB)]
 
@@ -264,6 +269,7 @@ query = qry.Query(conn, directed=True)
 """ TO-DO make sure that norm_pred has been cleared """
 """ ############################################### """
 
+"""
 # clear predicates
 # get table
 tbl11 = query.getKeys()[0]
@@ -271,29 +277,32 @@ tbl11 = query.getKeys()[0]
 sel = tbl11.get_exp_norm_sel()
 
 mJUlist = getMicroJUlist(query)
-
+"""
 
 """
 mJU cost card 
 """
-mJU = mJUlist.getMJUlist()[0]
+#mJU = mJUlist.getMJUlist()[0]
 """ get three TMs """
-midTM = mJU.getMidTM() #BC
-LTM = mJU.getLTM() # CE
-RTM = mJU.getRTM() # CD
+#midTM = mJU.getMidTM() #BC
+#LTM = mJU.getLTM() # CE
+#RTM = mJU.getRTM() # CD
 
 """ get connected tbls to each TM """
+"""
 midTM_tbls = mJU.getMTM_tbls()
 LTM_tbls = mJU.getLTM_tbls()
 RTM_tbls = mJU.getRTM_tbls()
+"""
 
 """ DIVIDE AND CONQUER """
 """ (1) mid_TM = LTM vs. midTM = RTM """
+"""
 for table in midTM_tbls:
     sel_list = table.getNormSelList()
     tbl_card = table.getCard()
     pred_cost = 0.0
-    
+"""  
 
 """ TO-DO distinguish functions for rough """
 def cal_agg_exp_sel(tbl_set):
@@ -308,12 +317,15 @@ def cal_agg_exp_sel(tbl_set):
 def get_conn_tbls(query, mJU):
     query_vk = query.getQuery_vk()
     return query_vk.getValues(mJU.getMidTM()).union(query_vk.getValues(mJU.getLTM())).union(query_vk.getValues(mJU.getRTM()))
-    
+
+""" 
 get_conn_tbls(query, mJUlist.getMJUlist()[0])   
     
 tbl_set = midTM_tbls.union(LTM_tbls).union(RTM_tbls)
+"""
+
 """ product of all nor_pred_sel """
-cal_agg_exp_sel(tbl_set)
+#cal_agg_exp_sel(tbl_set)
 
 def cal_agg_prod_card(*TM_list):
     """ A function that cal. product of cardinalities 
@@ -323,11 +335,11 @@ def cal_agg_prod_card(*TM_list):
     return temp_card
 
 """ product of all TM. card """
-cal_agg_prod_card(midTM, LTM, RTM)
+#cal_agg_prod_card(midTM, LTM, RTM)
 
 """ get lowest fanout """
-midTM.getLowestFO(LTM)
-midTM.getLowestFO(RTM)
+#midTM.getLowestFO(LTM)
+#midTM.getLowestFO(RTM)
 
 
 """ update expected """
@@ -353,32 +365,40 @@ for mJU in mJUlist.getMJUlist():
 
 
 """ update expected cost """
-mJU = mJUlist.getMJUlist()[0]
+
+#mJUlist = getMicroJUlist(query)
+#mJU = mJUlist.getMJUlist()[0]
+
+
+# mJUlist_display(mJUlist)
+
 """ get three TMs """
+"""
 MTM = mJU.getMidTM() #BC
 LTM = mJU.getLTM() # BE
 RTM = mJU.getRTM() # AB
-
+"""
 """ get connected tbls to each TM """
+"""
 MTM_tbls = mJU.getMTM_tbls()
 LTM_tbls = mJU.getLTM_tbls()
 RTM_tbls = mJU.getRTM_tbls()
-
+"""
 
 A.getNormPreds()
 """ get selectivity of preds """
 def getPredSel_list(table):
     return [pred.sel for pred in [pred for pred in table.getNormPreds() if pred.norm_sel_bool == True]]
 
-tmp_sel = [pred.sel for pred in [pred for pred in A.getNormPreds() if pred.norm_sel_bool == True]]
-tmp_sel
+# tmp_sel = [pred.sel for pred in [pred for pred in A.getNormPreds() if pred.norm_sel_bool == True]]
+# tmp_sel
 
 """ get preds """
 def getPred_list(table):
     return [pred for pred in [pred for pred in table.getNormPreds() if pred.norm_sel_bool == True]]
 
-tmp_pred = [pred for pred in [pred for pred in A.getNormPreds() if pred.norm_sel_bool == True]]
-tmp_pred[2].getSel()
+# tmp_pred = [pred for pred in [pred for pred in A.getNormPreds() if pred.norm_sel_bool == True]]
+# tmp_pred[2].getSel()
 
 
 
@@ -449,7 +469,6 @@ p7 = LTM_tbls.difference(p3).difference(p1) # E
 """
 """
 Three sets
-"""
 p1_4 = MTM_tbls.intersection(LTM_tbls) # mid & LTM: B
 p2_4 = RTM_tbls.intersection(MTM_tbls) # RTM & mid: B
 p3_4 = LTM_tbls.intersection(RTM_tbls) # LTM & RTM: B
@@ -461,34 +480,30 @@ p4 = p1_4.intersection(p2_4)
 p5 = MTM_tbls.difference(p1_4).difference(p2)
 p6 = RTM_tbls.difference(p2_4).difference(p3)
 p7 = LTM_tbls.difference(p3_4).difference(p1)
+"""
+
 
 
 """
 TWO SETS
 """
 """ LTM = MTM """
+"""
 p1_4 = MTM_tbls.intersection(LTM_tbls) # mid & LTM: B
 p3_7 = LTM_tbls.difference(p1_4)
 p2_5 = MTM_tbls.difference(p1_4)
+"""
+
 
 """
 for table in p1_4:
     print table, table.getProdNormSel()
-"""
-
-
-
-
 table.getNormPreds()[0].getSel()
 list(p1_4)[0].getNormPreds()[0].getSel()
 list(p3_7)[0].getNormPreds()[0].getSel()
 list(p2_5)[0].getNormPreds()[0].getSel()
+"""
 
-A.getProdNormSel()
-B.getProdNormSel()
-C.getProdNormSel()
-D.getProdNormSel()
-E.getProdNormSel()
 
 """
 for table in p3_7:
@@ -499,7 +514,7 @@ for table in p3_7:
 def cost_norm_preds(table):
     return table.card
 
-a = emt.ExpMtrcs_tbl(A)
+
 
 """ 
 mJU.getExpMtrcsDict().getTblGraph()[A]
@@ -529,10 +544,11 @@ expMtrcsDict.getExpMtrc_tbl(A)
 
 """ clear norm predicates in mJU """
 # initiates 
+"""
 mJU.initiate_tbls_TMs_est_mtrcs()
 expMtrcsDict = mJU.getExpMtrcsDict()
 expMtrcsDict.getTblGraph()
-
+"""
 
 """ initial set up """
 """
@@ -549,7 +565,7 @@ for table in expMtrcsDict.getTblGraph().keys():
 #expMtrcsDict.getExpMtrc_tbl(A).get_norm_preds_done()
 
 #mJU.initiate_tbls_TMs_est_mtrcs()
-
+"""
 list(mJU.otherTMs)[0]
 sorted(mJU.otherTMs)[0]
 
@@ -563,7 +579,7 @@ p_todo = mJU.getExpMtrcsDict().getExpMtrc_tbl(B).get_norm_preds_todo()
 preds = A.getNormPreds()
 
 C.card
-
+"""
 
 
 
@@ -584,21 +600,18 @@ def update_normPreds_ExpMtrcsDict_mJUlist(mJUlist):
     for mJU in mJUlist.getMJUlist():
         mJU.initiate_tbls_TMs_est_mtrcs()   # initiate tbls TM metrics
         update_normPreds_ExpMtrcsDict(mJU)  # update table scan cost, update exp card, update predicate to do list, update nor_pred_done boolean
-
+"""
 mJU.initiate_tbls_TMs_est_mtrcs()
 mJU.getExpMtrcsDict().getTblGraph()[B]
-
 mJU.getExpMtrcsDict().getTMGraph()
 
 #update_normPreds_ExpMtrcsDict(mJU)
 update_normPreds_ExpMtrcsDict_mJUlist(mJUlist)
-
-
+"""
 
 
 """
 e.g) AB  join BC
-"""
 res = {x:AB.getFanouts().getGraph()[x] for x in AB.getFanouts().getGraph() if x in BC.getFanouts().getGraph()}
 mJU 
 
@@ -606,6 +619,7 @@ res1  = [x[0] for x in res.values()]
 res1.sort(key=lambda fanout: fanout.getFO()) # get fanout 
 
 res1[0].getFO()
+"""
 
 # cost of join
 
@@ -618,13 +632,15 @@ res1[0].getFO()
 """
 for mJU in mJUlist.getMJUlist():
     print mJU
-""" 
 mJUlist.getMJUlist()[10].getExpMtrcsDict()
+""" 
 
 """ check if all norm_preds are cleared """
+"""
 mJUlist.getMJUlist()[0].getExpMtrcsDict()
 mJUlist.getMJUlist()[4].getExpMtrcsDict()
 mJUlist.getMJUlist()[8].getExpMtrcsDict()
+"""
 
 """ update estimated metrics in all mJU """
 """
@@ -637,43 +653,42 @@ for mJU in mJUlist.getMJUlist():
 for mJU in mJUlist.getMJUlist():
     mJU.initiate_tbls_TMs_est_mtrcs()
 """ 
+
+
 """
 TEST: initiate mJUlist ==> update all metrics
 """
-mJUlist = getMicroJUlist(query)
-mJUlist.initiate_tbls_TMs_est_mtrcs() ### initiate
-
+#mJUlist = getMicroJUlist(query)
+#mJUlist.initiate_tbls_TMs_est_mtrcs() ### initiate
+"""
 mJU = mJUlist.getMJUlist()[7]
 mJU.getExpMtrcsDict().getExpMtrc_tbl(C)
 
 MTM = mJU.getMidTM() #BC
 LTM = mJU.getLTM() # BE
 RTM = mJU.getRTM() # AB
+"""
 
 """ get connected tbls to each TM """
+"""
 MTM_tbls = mJU.getMTM_tbls()
 LTM_tbls = mJU.getLTM_tbls()
 RTM_tbls = mJU.getRTM_tbls()
+"""
 
 """
 TWO SETS
 """
+"""
 MTM_card = MTM.getCard()
 LTM_card = LTM.getCard()
 RTM_card = RTM.getCard()
+"""
 
-p3_4 = LTM_tbls.intersection(RTM_tbls) # LTM & RTM: B
-
-
-
+#p3_4 = LTM_tbls.intersection(RTM_tbls) # LTM & RTM: B
 
 
-def cal_agg_prod_card(*TM_list):
-    """ A function that cal. product of cardinalities 
-        input: a list of TMs """
-    temp_card = 1
-    for TM in TM_list: temp_card *= TM.getCard()
-    return temp_card
+
 
 
 def getProdNormSel_set(table_set):
@@ -681,8 +696,8 @@ def getProdNormSel_set(table_set):
     for tbl1 in table_set: prod_sel *= tbl1.getProdNormSel()
     return prod_sel
 
-MTM_card*getProdNormSel_set(p2_5)
-LTM_card*getProdNormSel_set(p3_7)
+#MTM_card*getProdNormSel_set(p2_5)
+#LTM_card*getProdNormSel_set(p3_7)
 
 
 def toMTM(MTM_card, otherTM_card, MTM_tbls, otherTM_tbls):
@@ -736,11 +751,12 @@ res += ( utility.cost_table_scan(MTM_card) +  utility.cost_table_scan(otherTM_ca
 
 get_lower_est_cost_mJU(6000, 10000, {A} , {B, C}, {D}, utility.cost_join_nl_by_card, utility.cost_table_scan)
 """
+"""
 MTM = mJU.getMidTM() #BC
 LTM = mJU.getLTM() # BE
 RTM = mJU.getRTM() # AB
 
-mJU.getEstJnCst_mJU()
+#mJU.getEstJnCst_mJU()
 
 
 MTM_tbls = mJU.getMTM_tbls()
@@ -761,45 +777,67 @@ p3_6 = RTM_tbls.difference(p2_4)
 
 M_LTM_cost = get_lower_est_cost_mJU(MTM_card, LTM_card, p2_5, p3_7, p1_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
 M_RTM_cost = get_lower_est_cost_mJU(MTM_card, RTM_card, p1_5, p3_6, p2_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
-mJU.addEstCost(min(M_LTM_cost,M_RTM_cost))
+#mJU.addEstCost(min(M_LTM_cost,M_RTM_cost))
+"""
 
 def getEstJnCst_mJU(mJU):
     """ get connected tbls to each TM """
-    MTM_tbls = mJU.getMTM_tbls()
-    LTM_tbls = mJU.getLTM_tbls()
-    RTM_tbls = mJU.getRTM_tbls()
-
-    """
-    TWO SETS
-    """
-    MTM_card = MTM.getCard()
-    LTM_card = LTM.getCard()
-    RTM_card = RTM.getCard()
+    MTM_tbls, LTM_tbls, RTM_tbls = mJU.getMTM_tbls(), mJU.getLTM_tbls(), mJU.getRTM_tbls()
+    
+    """ TWO SETS """
+    MTM_card, LTM_card, RTM_card = mJU.getMidTM().getCard(), mJU.getLTM().getCard(), mJU.getRTM().getCard()
 
     """ LTM = MTM """
-    p1_4 = MTM_tbls.intersection(LTM_tbls) 
-    p2_5 = MTM_tbls.difference(p1_4)
-    p3_7 = LTM_tbls.difference(p1_4)
+    p1_4 = MTM_tbls.intersection(LTM_tbls)
+    p2_5, p3_7 = MTM_tbls.difference(p1_4), LTM_tbls.difference(p1_4)
 
     """ MTM = RTM """
     p2_4 = MTM_tbls.intersection(RTM_tbls)
-    p1_5 = MTM_tbls.difference(p2_4)
-    p3_6 = RTM_tbls.difference(p2_4)
-    """
-    p1 = p1_4.difference(RTM_tbls)
-    p3 = p3_4.difference(MTM_tbls)
-    p6 = RTM_tbls.difference(p2_4).difference(p3)
-    p7 = LTM_tbls.difference(p3_4).difference(p1)
-    """
+    p1_5, p3_6 = MTM_tbls.difference(p2_4), RTM_tbls.difference(p2_4)
+
     M_LTM_cost = get_lower_est_cost_mJU(MTM_card, LTM_card, p2_5, p3_7, p1_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
     M_RTM_cost = get_lower_est_cost_mJU(MTM_card, RTM_card, p1_5, p3_6, p2_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
     #mJU.addEstCard(min(M_LTM_cost,M_RTM_cost))
     return (min(M_LTM_cost,M_RTM_cost))
 
+"""
+res = getEstJnCst_mJU(mJUlist.getMJUlist()[0])
+
+mJU = mJUlist.getMJUlist()[0]
+### get connected tbls to each TM ###
+MTM_tbls = mJU.getMTM_tbls()
+LTM_tbls = mJU.getLTM_tbls()
+RTM_tbls = mJU.getRTM_tbls()
+
+### TWO SETS ###
+MTM = mJU.getMidTM() #
+LTM = mJU.getLTM() # 
+RTM = mJU.getRTM() # 
+
+MTM_card = MTM.getCard()
+LTM_card = LTM.getCard()
+RTM_card = RTM.getCard()
+
+### LTM = MTM ###
+p1_4 = MTM_tbls.intersection(LTM_tbls) 
+p2_5 = MTM_tbls.difference(p1_4)
+p3_7 = LTM_tbls.difference(p1_4)
+
+### MTM = RTM ###
+p2_4 = MTM_tbls.intersection(RTM_tbls)
+p1_5 = MTM_tbls.difference(p2_4)
+p3_6 = RTM_tbls.difference(p2_4)
+
+M_LTM_cost = get_lower_est_cost_mJU(MTM_card, LTM_card, p2_5, p3_7, p1_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
+M_RTM_cost = get_lower_est_cost_mJU(MTM_card, RTM_card, p1_5, p3_6, p2_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
+"""
+
+
 # get estCost
 
 def updateEstCostCardCost_mJU(mJUlist, query):
     for mJU in mJUlist.getMJUlist():
+        
         """ update estCost """
         estCost = getEstJnCst_mJU(mJU)
         mJU.addEstCost(estCost)
@@ -808,24 +846,226 @@ def updateEstCostCardCost_mJU(mJUlist, query):
         midTM, LTM, RTM = mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()
         res = cal_agg_exp_sel(get_conn_tbls(query, mJU)) * cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
         mJU.setEstCard(res)
-
-
-
 # 
 def mJUlist_sort_by_cost(mJUlist):
-    mJUlist.getMJUlist().sort(key=lambda mJU: mJU.getEstCost())
+    #mJUlist.getMJUlist().sort(key = lambda mJU: mJU.getEstCard())
+    mJUlist.getMJUlist().sort(key = lambda mJU: mJU.getEstCost())
 
 def mJUlist_sort_by_card(mJUlist):
+    #mJUlist.getMJUlist().sort(key=lambda mJU: mJU.getEstCost())
     mJUlist.getMJUlist().sort(key = lambda mJU: mJU.getEstCard())
 
+def mJUlist_display(mJUlist):
+    for mJU in mJUlist.getMJUlist():
+        print mJU, mJU.getEstCost(), mJU.getEstCard()
 
-for mJU in mJUlist.getMJUlist():
-    print mJU, mJU.getEstCost(), mJU.getEstCard()
+tic= time.time()
 
+""" ############################################### """
+""" TEST000: create mJUlist & update est. card/cost """
+""" ############################################### """
+### create mJUlist
+mJUlist = getMicroJUlist(query)    
+### update mJUlist metrics
+mJUlist.updateEstCostCardCost_mJU(query)
+#mJUlist_sort_by_cost(mJUlist)
+mJUlist.mJUlist_sort_by_card()
+for i in range(1000):
+    mJUlist = getMicroJUlist(query)    
+    mJUlist.updateEstCostCardCost_mJU(query)
+    #mJUlist_sort_by_cost(mJUlist)
+    mJUlist.mJUlist_sort_by_card()
+toc= time.time()
+print "query graph fetch", (toc-tic)
+mJUlist.mJUlist_display()
+
+cost0 = mJUlist.getMJUlist()[0].getEstCost()
+
+""" ############################################### """
+""" TEST00: aggregateFanouts + initiating TM_clustr """
+""" ############################################### """
+
+
+a = mJUlist.getMJUlist()[0].getMTM().getFanouts().getGraph()
+b = mJUlist.getMJUlist()[0].getLTM().getFanouts().getGraph()
+c = mJUlist.getMJUlist()[0].getRTM().getFanouts().getGraph()
+
+from collections import defaultdict
+from itertools import chain
+
+### identify the cheapest mJU by cardinality
+mJU = mJUlist.getMJUlist()[0]
+
+res = defaultdict(list, dict(chain(mJU.getMTM().getFanouts().getGraph().items(), 
+                                   mJU.getLTM().getFanouts().getGraph().items(), 
+                                   mJU.getRTM().getFanouts().getGraph().items() )))
+
+tbl.TM_clstr(mJU).getFanouts().getGraph()
+tbl.TM_clstr(mJU).getCard()
+
+
+AB_BC_BE = tbl.TM_clstr(mJU)
+AB_BC_BE.getCum_cost()
+
+""" ############################################### """
+""" TEST00: aggregateFanouts + initiating TM_clustr """
+""" ############################################### """
+
+
+""" ############################################### """
+""" TEST01: update query graph                      """
+""" ############################################### """
+import copy 
+query1 = copy.deepcopy(query)
+
+### 
+mJU.getMTM()
+mJU.getLTM()
+mJU.getRTM()
+query1.substitute(mJU.getMTM(), AB_BC_BE)
+query1.substitute(mJU.getLTM(), AB_BC_BE)
+query1.substitute(mJU.getRTM(), AB_BC_BE)
+query1.resetKeyVal()
+
+query1.getQuery_vk()
+query1.getQueryGraph()
+
+
+""" ############################################### """
+""" TEST10: aggregateFanouts + initiating TM_clustr """
+""" ############################################### """
+mJUlist4 = mju.MicroJUlist().getMicroJUlist(query1, excldShort = True)  
+mJUlist4.getMJUlist()
+
+### update mJUlist 
+mJUlist4.updateEstCostCardCost_mJU(query1)
+mJUlist4.mJUlist_sort_by_card()
+mJUlist4.mJUlist_display()
+
+cost1 = mJUlist4.getMJUlist()[1].getEstCost()
+
+mJU_CE_BE_BC_AB_CD = mJUlist4.getMJUlist()[1]
+CE_BE_BC_AB_CD = tbl.TM_clstr(mJU_CE_BE_BC_AB_CD)
+
+tic= time.time()
+for i in range(1000):
+    query2 = copy.deepcopy(query1)
+toc= time.time()
+print "query graph fetch", (toc-tic)
+
+mJU_CE_BE_BC_AB_CD.getMTM()
+mJU_CE_BE_BC_AB_CD.getLTM()
+mJU_CE_BE_BC_AB_CD.getRTM()
+query2.substitute(mJU_CE_BE_BC_AB_CD.getMTM(), CE_BE_BC_AB_CD)
+query2.substitute(mJU_CE_BE_BC_AB_CD.getLTM(), CE_BE_BC_AB_CD)
+query2.substitute(mJU_CE_BE_BC_AB_CD.getRTM(), CE_BE_BC_AB_CD)
+query2.resetKeyVal()
+query2
+
+
+query3 = copy.deepcopy(query2)
+mJUlist5 = mju.MicroJUlist().getMicroJUlist(query3, excldShort = True)  
+mJUlist5.getMJUlist()
+
+mJUlist6 = mju.MicroJUlist().getMicroJUlist(query3, excldShort = False)  
+mJUlist6.getMJUlist()
+
+excldShort = False
+
+mJUlist = mju.MicroJUlist([])
+query = query1
+queryGraph_vk = query.getQuery_vk().getQueryGraph()
+for TM1 in queryGraph_vk.keys(): # first node
+    print '{}: {}'.format(TM1, 'start')   
+    otherTMs = set([])
+    for table1 in queryGraph_vk[TM1]: # tbl-link
+        print '1 tl', table1, query._graph[table1]
+        for TM2 in query.getQueryGraph()[table1]:
+            print TM2
+            otherTMs.add(TM2) # linked TM set
+            print 'otherTMs:', otherTMs
+            otherTMs.discard(TM1)
+            for TM3, TM4 in itertools.combinations(otherTMs, 2):
+                microJU = mju.MicroJU(TM1, query)
+                microJU.addOtherTMs(TM3)
+                microJU.addOtherTMs(TM4)
+                print 'microJU:', microJU
+                mJUlist.append(microJU)
+
+mJUlist.mJUlist_display()
+
+cost0 + cost1
+
+for TM3, TM4 in itertools.combinations(otherTMs, 2):
+    print TM3, TM4
+
+
+
+"""
+
+
+query1.getQueryGraph()[A]
+query1.getQueryGraph()[C]
+query1.getQueryGraph()[E]
+query1.getQueryGraph()[B]
+
+import itertools
+mJUlist4 = mju.MicroJUlist([])
+queryGraph_vk = query1.getQuery_vk().getQueryGraph()
+
+
+for TM1 in queryGraph_vk.keys(): # first node      
+    print '{}: {}'.format(TM1, 'start')   
+    otherTMs = set([])
+    for table1 in queryGraph_vk[TM1]: # tbl-link
+        print '1 tl', table1, query._graph[table1]
+        for TM2 in query1.getQueryGraph()[table1]:
+            print TM2
+            otherTMs.add(TM2) # linked TM set
+            print 'otherTMs:', otherTMs
+        otherTMs.discard(TM1)
+        for TM3, TM4 in itertools.combinations(otherTMs, 2):
+            microJU = mju.MicroJU(TM1, query1)
+            microJU.addOtherTMs(TM3)
+            microJU.addOtherTMs(TM4)
+            print 'microJU:', microJU
+            mJUlist4.append(microJU)
+mJUlist4
+
+
+TMs = queryGraph_vk.keys()
+queryGraph_vk[TMs[0]]
+
+queryGraph_vk[queryGraph_vk.keys()[0]]
+
+for TM2 in query1.getQueryGraph()[E]:
+    otherTMs.add(TM2) # linked TM set
+
+for TM3, TM4 in itertools.combinations(otherTMs, 2):
+    print TM3, TM4
+
+    
+otherTMs
+"""
+
+list(mJUlist.getMJUlist()[0].getTables(query))[0].getCum_cost()
+
+
+
+""" creating TM_cluster """
+
+
+query.getQueryGraph()
+
+"""
+========================================
 
 updateEstCostCardCost_mJU(mJUlist,query)
 mJUlist_sort_by_cost(mJUlist)
 mJUlist_sort_by_card(mJUlist)
+
+"""
+
 
 """
 Recursively
@@ -835,14 +1075,14 @@ TO-DO: do what
 """
 
 
-
+"""
 mJU
 midTM, LTM, RTM = mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()
 res = cal_agg_exp_sel(get_conn_tbls(query, mJU)) * cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
 mJU.setEstCard(res)
 
 mJUlist.getMJUlist()[1].getEstCard()
-
+"""
 
     
 
@@ -850,10 +1090,9 @@ mJUlist.getMJUlist()[1].getEstCard()
 
 #getEstJnCst_mJU(mJU)
 #mJU.addEstCost(mJU.getEstJnCst_mJU())
-mJU.getEstCost()
+#mJU.getEstCost()
 #mJU.estCost = 0.0
-
-mJU.getEstCard()
+#mJU.getEstCard()
 
 
 
@@ -879,17 +1118,6 @@ ans - ans1
 """
 
 
-getProdNormSel_set(p1_4)
-
-
-
-A.getProdNormSel()
-
-
-
-
-
-
 """
 mJUlist.getMJUlist()[0].initiate_tbls_TMs_est_mtrcs()
 mJUlist.getMJUlist()[0].getExpMtrcsDict().getExpMtrc_tbl(A)
@@ -907,16 +1135,19 @@ len(mJUlist.getMJUlist())
 """ 
 
 """
+"""
 mJU.getExpMtrcsDict().getExpMtrc_tbl(A)
 
 mJU.getExpMtrcsDict()
 
 mJU = mJUlist.getMJUlist()[4]
+"""
 
 """
 mJU.getExpMtrc_tbl(A).get_norm_preds_todo()
 mJU.getExpMtrcsDict().getExpMtrc_tbl(A)
 mJU.getExpMtrc_tbl(A).get_norm_preds_todo()
+"""
 """
 mJU.getMidTM()
 mJU.getOtherTMs()
@@ -937,24 +1168,23 @@ p5 = MTM_tbls.difference(p1_4).difference(p2)
 p6 = RTM_tbls.difference(p2_4).difference(p3)
 p7 = LTM_tbls.difference(p3_4).difference(p1)
 
+"""
 """ LTM = MTM """
+"""
 p1_4 = MTM_tbls.intersection(LTM_tbls) # mid & LTM: B
 p3_7 = LTM_tbls.difference(p1_4)
 p2_5 = MTM_tbls.difference(p1_4)
-
+"""
 """ 1) look for the estimated metric dictionary """ 
+"""
 [table.getProdNormSel() for table in p1_4]
 [table.getProdNormSel() for table in p3_7]
 [table.getProdNormSel() for table in p2_5]
-
-""" """
-
-""" """
-
-
+"""
 
 
 """ MTM = RTM """
+"""
 p2_4 = MTM_tbls.intersection(RTM_tbls) # mid & LTM: B
 p3_6 = RTM_tbls.difference(p2_4)
 p1_5 = MTM_tbls.difference(p2_4)
@@ -962,14 +1192,14 @@ p1_5 = MTM_tbls.difference(p2_4)
 [table.getProdNormSel() for table in p2_4]
 [table.getProdNormSel() for table in p3_6]
 [table.getProdNormSel() for table in p1_5]
-
+"""
 
 
 """
 for table in p1_4:
     print table, table.getProdNormSel()
-"""
 mJU.initiate_tbls_TMs_est_mtrcs()
+"""
 
 
 """
@@ -983,25 +1213,23 @@ p_todo = [pred for pred in p_todo if pred not in preds]
 """
 
 
-#
-
-
-
 """ MTM = RTM """
+"""
 p2_4 = RTM_tbls.intersection(MTM_tbls) # RTM & mid: B
 P1_5 = MTM_tbls.difference(p2_4)
 p3_6 = RTM_tbls.difference(p2_4)
+"""
 
-
+"""
 res = []
 for table in p1_4:
     res.append([pred.sel for pred in [pred for pred in table.getNormPreds() if pred.norm_sel_bool == True]])
-
 res    
+"""
 
 # nanoJU
-MTM.getCard()
-LTM.getCard()
+#MTM.getCard()
+#LTM.getCard()
 
 
 # MTM.getCard() * 
@@ -1014,12 +1242,12 @@ LTM.getCard()
 하려고 하는 바: normselList ==> loop  해서 
 tmp card =>  predicate cost
 
-"""    
-
 p2 = midTM_tbls.intersection(LTM_tbls) # B
 p3 = midTM_tbls.difference(LTM_tbls).difference(RTM_tbls) # C
 p4 = RTM_tbls.intersection(midTM_tbls) # B
 p5 = RTM_tbls.difference(midTM_tbls) # A
+"""    
+
 
 
 
@@ -1038,13 +1266,11 @@ ps5_1 = cal_agg_exp_sel(p5_1)
 """
 
 utls = utl.Utilities()
-
+"""
 utls.cost_join_nl(midTM, LTM)
 utls.cost_join_nl(midTM, RTM)
-
-
 utls.cost_join_nl(midTM, LTM)
-
+"""
 
 
 #utls.cost_join_nl()
@@ -1089,7 +1315,6 @@ a.sort(key = lambda fanout: fanout.getFO())
 
 
 # sort by fanout
-
 midTM.getLowestFO(LTM)
 
 midTM_tbls = query.getQuery_vk().getValues(midTM)
@@ -1294,7 +1519,7 @@ mJU = microJUlist[0]
 
 def div_int_lf_rg(mJU):
     """ input: two TMs and related tables """
-    midTM = microJUlist[0].getMidTM()
+    #midTM = microJUlist[0].getMidTM()
     LTM = microJUlist[0].getLTM()
     RTM = microJUlist[0].getRTM()
     
@@ -1380,21 +1605,10 @@ def nano_opt(micro_JU, cost_join = cost_join_nl):
 #dd = getMicroJU(query)
 #query._graph    
 
-        
-    
-    
-        
-
 
 
         #for table : None
 """ make function get TM by key, get key by TM"""
-
-
-
-
-
-
 ###############################
 # test: fanouts are created with a deepcopy
 #### ===>> SUCCESS
@@ -1645,46 +1859,6 @@ query.snapshot_AllNodes()
 
 """ doesn't get the original one updated """
 
-def div_int_lf_rg(nano_qry):
-    """ input: two TMs and related tables """
-    intersection = nano_qry._graph.items()[0][1] & nano_qry._graph.items()[1][1]
-    left = nano_qry._graph.items()[0][1] - intersection
-    right = nano_qry._graph.items()[1][1] - intersection
-    """ left: normal tables exclusive to left TM """
-    """ output left == right: sets of normal tables, leftTM, rightTM """
-    return left, intersection, right, nano_qry._graph.items()[0][0], nano_qry._graph.items()[1][0]
-    """ each set of normal tables may not be more than one as TM_cluster """
-
-def nano_opt(query):
-    import copy
-    """ input: nano query """
-    """ ouput TM_cluster and associated tbls """
-    
-    """ optimization for 3+a tbls and 2 TMs """
-    """ two scheme: lowest (and lower) cardinality, lowestet selectivity """
-    """ choose lowest total SELECTIVITY in this method """
-    """ distinguish of right and left does not matter """
-    
-    """ TO-DO: right now each tables has one pred in preds but has to 
-    work with multiple tables with multiple preds """
-    """ However, it would not be efficient to process all preds at every option """
-    """ for display all path purpose: yes, we should do all preds processing dynamically """
-    """ So, deepcopy of query would be the one with all multiple preds in preds """
-    """ for optimization: no, we don't have to process all preds at every deep copies """
-    query_dc = copy.deepcopy(query)
-    
-    query_dc_vk = query_dc.swapKeyVal() # same table object
-    lfOnly, intersection, rghOnly, leftTM, rightTM = div_int_lf_rg(query_dc_vk)
-    """ output: lfOnly, intersection, rghOnly:set of tbls; leftTM, rightTM: TM """
-    """ TO-DO: write processPredicate(tbl, TM) """
-    query_dc.processPredicate(lfOnly, leftTM)
-    query_dc.processPredicate(rghOnly, rightTM)
-    if leftTM.card > rightTM.card:
-        query_dc.processPredicate(intersection, rightTM)
-    else:
-        query_dc.processPredicate(intersection, leftTM)
-    query_dc.processJoin_nl(leftTM, rightTM) # nested loop join
-    """ this would update two TMs into TM cluster and replace it on the graph """
     
 #query_lfTM_vk.
 """

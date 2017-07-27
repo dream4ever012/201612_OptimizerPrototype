@@ -9,6 +9,7 @@ Created on Wed Jan 25 12:50:22 2017
 #import predicate as pds
 import ObjectsForTesting as oft
 import microJU as mju
+import utilities
 
 class Optimizer(object):
     def __init__(self, query = oft.prep_query0(), excldShort = True):
@@ -212,20 +213,8 @@ class Optimizer(object):
 #        for node in nodesW_multPreds:
 #            node.
 
-
-     
-    """ COMPLETE this function !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!! URGENT!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-    allNodes = self.get_AllNodes()
-    nodesW_multPreds = [node for node in allNodes if node.has_mult_normPred()]
     
-    processNorm_preds(self): @ Table1_1.py
-    """        
 
-            
-  
-
-    def cost_join_nl(self, key_node, node):
-        return key_node.card*node.card
         
 
 

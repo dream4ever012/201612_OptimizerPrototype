@@ -152,36 +152,33 @@ class MicroJU(object):
     def getEstJnCst_mJU(self, costF_join = utl1.cost_join_nl_by_card, norm_p_costF = utl1.cost_table_scan):
         
         """ get connected tbls to each TM """
-        MTM_tbls = self.getMTM_tbls()
-        LTM_tbls = self.getLTM_tbls()
-        RTM_tbls = self.getRTM_tbls()
-
-        """
-        TWO SETS
-        """
-        MTM_card = self.getMTM().getCard()
-        LTM_card = self.getLTM().getCard()
-        RTM_card = self.getRTM().getCard()
+        MTM_tbls, LTM_tbls, RTM_tbls = self.getMTM_tbls(), self.getLTM_tbls(), self.getRTM_tbls()
+        MTM_card, LTM_card, RTM_card = self.getMTM().getCard(), self.getLTM().getCard(), self.getRTM().getCard()
 
         """ LTM = MTM """
         p1_4 = MTM_tbls.intersection(LTM_tbls) 
-        p2_5 = MTM_tbls.difference(p1_4)
-        p3_7 = LTM_tbls.difference(p1_4)
+        p2_5, p3_7 = MTM_tbls.difference(p1_4), LTM_tbls.difference(p1_4)
 
         """ MTM = RTM """
         p2_4 = MTM_tbls.intersection(RTM_tbls)
-        p1_5 = MTM_tbls.difference(p2_4)
-        p3_6 = RTM_tbls.difference(p2_4)
-        """
-        p1 = p1_4.difference(RTM_tbls)
-        p3 = p3_4.difference(MTM_tbls)
-        p6 = RTM_tbls.difference(p2_4).difference(p3)
-        p7 = LTM_tbls.difference(p3_4).difference(p1)
-        """
+        p1_5, p3_6 = MTM_tbls.difference(p2_4), RTM_tbls.difference(p2_4)
+
         M_LTM_cost = self.get_lower_est_cost_mJU(MTM_card, LTM_card, p2_5, p3_7, p1_4, costF_join, norm_p_costF)
         M_RTM_cost = self.get_lower_est_cost_mJU(MTM_card, RTM_card, p1_5, p3_6, p2_4, costF_join, norm_p_costF)
-        #mJU.addEstCard(min(M_LTM_cost,M_RTM_cost))
         return (min(M_LTM_cost,M_RTM_cost))
+    
+
+    """ 
+    =================== get lower estimated mJU =========================
+    """
+
+
+    def toMTM(self, MTM_card, otherTM_card, MTM_tbls, otherTM_tbls):
+        return MTM_card*self.getProdNormSel_set(MTM_tbls) <= otherTM_card*self.getProdNormSel_set(otherTM_tbls)
+
+    """ 
+    =================== get lower estimated mJU =========================
+    """
     
     def __repr__(self):
         return '{}: {}; {}'.format(self.midTM, self.otherTMs, self.isLegit)
@@ -191,6 +188,7 @@ class MicroJU(object):
     
     
 class MicroJUlist(object):
+    
     def __init__(self, microJUlist = [], excldShort = True):
         """ mJUlist: list of microJU """
         self.mJUlist = microJUlist
@@ -214,7 +212,7 @@ class MicroJUlist(object):
         import itertools
         """ midTM, linked TM set ==> combination of link set ==> create MicroJU 
             ==> append to JUlist """
-        mJUlist = MicroJUlist()
+        mJUlist = MicroJUlist([])
         queryGraph_vk = query.getQuery_vk().getQueryGraph()
         for TM1 in queryGraph_vk.keys(): # first node      
             #print '{}: {}'.format(TM1, 'start')   
@@ -225,6 +223,7 @@ class MicroJUlist(object):
                     #print TM2
                     otherTMs.add(TM2) # linked TM set
                     #print 'otherTMs:', otherTMs
+                if excldShort == True: otherTMs.discard(TM1)
                 for TM3, TM4 in itertools.combinations(otherTMs, 2):
                     microJU = MicroJU(TM1, query)
                     microJU.addOtherTMs(TM3)
@@ -244,6 +243,14 @@ class MicroJUlist(object):
         for TM in TM_list: temp_card *= TM.getCard()
         return temp_card
     
+    def cal_agg_exp_sel(self, tbl_set):
+        """ A method that aggregate all predicates 
+        output 1.0 when there is no predicates in a table 
+        input: set of tbls """
+        temp_sel = 1.0
+        for table in list(tbl_set): temp_sel *= table.get_exp_norm_sel()
+        return temp_sel
+    
     def get_conn_tbls(self, query, mJU):
         """ get all connected tables to three tables in mJU 
             input: query, mJU; output: tbls_set connected to the three TMs """
@@ -251,12 +258,12 @@ class MicroJUlist(object):
         return query_vk.getValues(mJU.getMidTM()).union(query_vk.getValues(mJU.getLTM())).union(query_vk.getValues(mJU.getRTM()))
     
     def updateExpCard(self, query):
-        for mJU in self.mJUlist.getMJUlist():
+        for mJU in self.mJUlist:
             midTM, LTM, RTM = mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()
             res = self.cal_agg_exp_sel(self.get_conn_tbls(query, mJU)) * self.cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
             mJU.setExpCard(res)
     def updateEstCardCost_mJU(self,query):
-        for mJU in self.mJUlist.getMJUlist():
+        for mJU in self.mJUlist:
             """ update estCost """
             estCost = mJU.getEstJnCst_mJU()
             mJU.addEstCost(estCost)
@@ -265,6 +272,29 @@ class MicroJUlist(object):
             midTM, LTM, RTM = mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()
             res = self.cal_agg_exp_sel(self.get_conn_tbls(query, mJU)) * self.cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
             mJU.setEstCard(res)
+
+    def updateEstCostCardCost_mJU(self, query):
+        for mJU in self.mJUlist:
+            
+            """ update estCost """
+            estCost = mJU.getEstJnCst_mJU()
+            mJU.addEstCost(estCost)
+            
+            """ update estCard """
+            midTM, LTM, RTM = mJU.getMidTM(), mJU.getLTM(), mJU.getRTM()
+            res = self.cal_agg_exp_sel(self.get_conn_tbls(query, mJU)) * self.cal_agg_prod_card(midTM, LTM, RTM) * midTM.getLowestFO(LTM).getFO() *midTM.getLowestFO(RTM).getFO()
+            mJU.setEstCard(res)
+
+            
+    def mJUlist_sort_by_cost(self):
+        self.getMJUlist().sort(key = lambda mJU: mJU.getEstCost())
+
+    def mJUlist_sort_by_card(self):
+        self.getMJUlist().sort(key = lambda mJU: mJU.getEstCard())
+
+    def mJUlist_display(self):
+        for mJU in self.getMJUlist():
+            print mJU, mJU.getEstCost(), mJU.getEstCard()
     
     def __repr__(self):
         return '{}; {}'.format(self.mJUlist, self.excldShort)
