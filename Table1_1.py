@@ -82,6 +82,7 @@ class TM_clstr(TM):
         self.clstrdTMs = set([])
         self.initClstrdTMs(lTM, mTM, rTM)
         self.fanouts = fo.Fanouts()
+        """ inherit fanouts from other TMs """
         self.aggregateFanouts(mJU)
   
     def getIsClstr(self):
@@ -99,6 +100,7 @@ class TM_clstr(TM):
         return self.getclstrdTMs() == other.getclstredTMs()
     
     def aggregateFanouts(self, mJU):
+        """ inherit fanouts from mJU """ 
         res = defaultdict(list, dict(chain(mJU.getMTM().getFanouts().getGraph().items(), 
                                            mJU.getLTM().getFanouts().getGraph().items(), 
                                            mJU.getRTM().getFanouts().getGraph().items() )))

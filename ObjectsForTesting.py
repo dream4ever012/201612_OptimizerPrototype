@@ -930,6 +930,8 @@ query1.resetKeyVal()
 query1.getQuery_vk()
 query1.getQueryGraph()
 
+len(query1.getAllValues())
+
 
 """ ############################################### """
 """ TEST10: aggregateFanouts + initiating TM_clustr """
