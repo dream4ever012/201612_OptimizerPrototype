@@ -19,11 +19,11 @@ class MicroJU(object):
         self.estCard = 0.0
         self.estCost = 0.0
         self.isLegit = False
+        self.Rbetter = None
         # may not want to initiate this object when it is obviously not productive 
         self.expMtrcsDict = None
         if (self.isLegit == True):
             self.initiate_tbls_TMs_est_mtrcs() # after add other TMs
-
         
     def initiate_tbl_est_metrics(self, table):
         """ initiate table estimated metrics to _tbls """
@@ -58,6 +58,15 @@ class MicroJU(object):
             return self.expMtrcsDict.getExpMtrc_tbl(table)
         except AttributeError:
             pass    
+    
+    def getRbetter(self):
+        return self.Rbetter
+    
+    def setRbetter(self):
+        self.Rbetter = True
+        
+    def setLbetter(self):
+        self.Rbetter = False
 
     def addOtherTMs(self, TM):
         if (self.isLegit == False):
@@ -138,7 +147,6 @@ class MicroJU(object):
         else:
             return TM2_card + TM1_card * TM2_card
     
-    
     def get_lower_est_cost_mJU(self, MTM_card, otherTM_card, tbls_Monly, tbls_otherOnly, tbls_intersection, costF_join, norm_p_costF):
         """ get lower cost """
         MTM_card_ = MTM_card * self.getProdNormSel_set(tbls_Monly) # intermedicate MTM_card
@@ -156,6 +164,7 @@ class MicroJU(object):
         MTM_card, LTM_card, RTM_card = self.getMTM().getCard(), self.getLTM().getCard(), self.getRTM().getCard()
 
         """ LTM = MTM """
+        # p1_4: B; p2_5: C; p3_7: A
         p1_4 = MTM_tbls.intersection(LTM_tbls) 
         p2_5, p3_7 = MTM_tbls.difference(p1_4), LTM_tbls.difference(p1_4)
 
@@ -165,6 +174,10 @@ class MicroJU(object):
 
         M_LTM_cost = self.get_lower_est_cost_mJU(MTM_card, LTM_card, p2_5, p3_7, p1_4, costF_join, norm_p_costF)
         M_RTM_cost = self.get_lower_est_cost_mJU(MTM_card, RTM_card, p1_5, p3_6, p2_4, costF_join, norm_p_costF)
+        self.setRbetter() if M_RTM_cost < M_LTM_cost else self.setLbetter()
+        
+        
+        
         return (min(M_LTM_cost,M_RTM_cost))
     
 
@@ -180,8 +193,11 @@ class MicroJU(object):
     =================== get lower estimated mJU =========================
     """
     
+    def __str__(self):
+        return '{}: {}; {}'.format(self.midTM, self.otherTMs, self.isLegit, self.Rbetter)
+    
     def __repr__(self):
-        return '{}: {}; {}'.format(self.midTM, self.otherTMs, self.isLegit)
+        return '{}: {}; {}'.format(self.midTM, self.otherTMs, self.isLegit, self.Rbetter)
     
     def __eq__(self, other):
         return (self.midTM == other.midTM) and (self.otherTMs == other.otherTMs)

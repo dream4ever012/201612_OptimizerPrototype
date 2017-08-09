@@ -800,6 +800,153 @@ def getEstJnCst_mJU(mJU):
     #mJU.addEstCard(min(M_LTM_cost,M_RTM_cost))
     return (min(M_LTM_cost,M_RTM_cost))
 
+def getEstJnCst_mJU_exst(mJU):
+    """ get connected tbls to each TM """
+    MTM_tbls, LTM_tbls, RTM_tbls = mJU.getMTM_tbls(), mJU.getLTM_tbls(), mJU.getRTM_tbls()
+    
+    """ TWO SETS """
+    MTM_card, LTM_card, RTM_card = mJU.getMidTM().getCard(), mJU.getLTM().getCard(), mJU.getRTM().getCard()
+
+    """ LTM = MTM """
+    p1_4 = MTM_tbls.intersection(LTM_tbls)
+    p2_5, p3_7 = MTM_tbls.difference(p1_4), LTM_tbls.difference(p1_4)
+
+    """ MTM = RTM """
+    p2_4 = MTM_tbls.intersection(RTM_tbls)
+    p1_5, p3_6 = MTM_tbls.difference(p2_4), RTM_tbls.difference(p2_4)
+
+    M_LTM_cost = get_lower_est_cost_mJU(MTM_card, LTM_card, p2_5, p3_7, p1_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
+    M_RTM_cost = get_lower_est_cost_mJU(MTM_card, RTM_card, p1_5, p3_6, p2_4, utility.cost_join_nl_by_card, utility.cost_table_scan)
+    #mJU.addEstCard(min(M_LTM_cost,M_RTM_cost))
+    return (min(M_LTM_cost,M_RTM_cost))
+
+
+class nJUs(object):
+    """ three TMs: midTM and LTM, RTM """
+    def __init__(self, mJU, query):
+        self.MTM_tbls, self.LTM_tbls, self.RTM_tbls = mJU.getMTM_tbls(), mJU.getLTM_tbls(), mJU.getRTM_tbls()
+        self.LTM, self.MTM, self.RTM = mJU.getLTM(), mJU.getMTM(), mJU.getRTM()
+        """ LTM = MTM: get related tables """
+        self.p1_4 = MTM_tbls.intersection(LTM_tbls)
+        self.p2_5, self.p3_7 = MTM_tbls.difference(p1_4), LTM_tbls.difference(p1_4)
+        """ MTM = RTM: get related tables """
+        self.p2_4 = MTM_tbls.intersection(RTM_tbls)
+        self.p1_5, self.p3_6 = MTM_tbls.difference(p2_4), RTM_tbls.difference(p2_4)
+        
+        """ left/right nano units """
+        
+        
+        
+        self.otherTMs = set([])
+        #self.expectedCost = 0.0 """ TO-DO: has to go with Cost at distributed setting """
+        self.estCard = 0.0
+        self.estCost = 0.0
+        self.isLegit = False
+        self.Rbetter = None
+        # may not want to initiate this object when it is obviously not productive 
+        self.expMtrcsDict = None
+        if (self.isLegit == True):
+            self.initiate_tbls_TMs_est_mtrcs() # after add other TMs
+B
+
+MTM_tbls, LTM_tbls, RTM_tbls = mJU.getMTM_tbls(), mJU.getLTM_tbls(), mJU.getRTM_tbls()
+LTM, MTM, RTM = mJU.getLTM(), mJU.getMTM(), mJU.getRTM()
+tbls_intersection = MTM_tbls.intersection(LTM_tbls)
+tbls_MTMonly, tbls_LTMonly = MTM_tbls.difference(p1_4), LTM_tbls.difference(p1_4)
+
+p2_4 = MTM_tbls.intersection(RTM_tbls)
+p1_5, p3_6 = MTM_tbls.difference(p2_4), RTM_tbls.difference(p2_4)
+
+### created normPred_nju: one per a table
+predsMTMonly = [normPred_nju(table) for table in tbls_MTMonly if table.has_normPred()]
+predsLTMonly = [normPred_nju(table) for table in tbls_LTMonly if table.has_normPred()]
+predsInsctn  = [normPred_nju(table) for table in tbls_intersection if table.has_normPred()]
+
+### 
+all_preds = predsMTMonly + predsLTMonly + predsInsctn
+
+
+
+# sort by prod of selectivity
+predsMTMonly.sort(key = lambda normPred_nju: normPred_nju.getTblProdNormSel())
+### MTMonly cannot be multiple b/c two TMs are connected via one table
+### this gives an insight that TM cluster should inherit all UDF predicates from tables
+predsLTMonly.sort(key = lambda normPred_nju: normPred_nju.getTblProdNormSel())
+predsInsctn.sort(key = lambda normPred_nju: normPred_nju.getTblProdNormSel())
+
+all_preds
+res = itertools.permutations(all_preds)
+for pred in res:
+    print pred
+
+
+""" insctn * 2"""
+
+
+class normPred_njuList(object):
+    def __init__(self, normPred_njuList = []):
+        self.normPred_njuList = normPred_njuList
+        
+    def getNP_njuList(self):
+        return self.normPred_njuList
+    
+    def append(self, normPred_nju):
+        if self.excldShort == True:
+            # no redendancy/ only full microJU/ 
+            if (microJU not in self.mJUlist) and (microJU.getIsLegit()): self.mJUlist.append(microJU)
+        else: # full (midTM + twoTMs) and partial microJU
+            if (microJU not in self.mJUlist): self.mJUlist.append(microJU)
+            
+
+# creating two for Inctn; how to specify the target?
+class normPred_nju(object):
+    ### stats place-holder 
+    ### create 
+    def __init__(self, table, isOnly = True):
+        self.table = table
+        self.tblName = table.getTableName()
+        self.tblCard = table.getCard()
+        self.tblProdNormSel = table.getProdNormSel()
+        self.isOnly = isOnly # either MTM/otherTM-only or Insctn # otherwise 
+    
+    def getTblName(self):
+        return self.tblName
+    
+    def getTblCard(self):
+        return self.tblCard
+    
+    def getTblProdNormSel(self):
+        return self.tblProdNormSel
+    
+    def getIsOnly(self):
+        return self.isOnly
+    
+    def __repr__(self):
+        return '({}; {}; {})'.format(self.tblName, self.tblCard, self.tblProdNormSel)
+
+class TM_join_nju(object):
+    def __init__(self, MTM, otherTM, hasLTM = True):
+        self.MTMName = MTM.getTableName()
+        self.MTMCard = MTM.getCard()
+        self.otherTMName = otherTM.getTableName()
+        self.otherTMCard = otherTM.getCard()
+        self.hasLTM = hasLTM # if hasLTM
+        
+    def getTMName(self):
+        return self.TMName
+    
+    def getTMCard(self):
+        return self.TMCard
+    
+    def __repr__(self):
+        return '{}; {}'.format(self.TMName, self.tblProdNormSel)
+    
+    
+class nJU(object):
+    def __init__(self, MTM, otherTM, tbls_intersection, tbls_MTMonly, tbls_otherTMonly):
+        self.MTM, self.otherTM = MTM.getCard(), otherTM.getCard()
+        self.tblsMTMonly = [(tbl1.getTableName(), tbl1.getProdNormSel()  for tbl1 in tbls_MTMonly if tbl1.has_normPred()]
+
 """
 res = getEstJnCst_mJU(mJUlist.getMJUlist()[0])
 
@@ -859,13 +1006,17 @@ def mJUlist_display(mJUlist):
     for mJU in mJUlist.getMJUlist():
         print mJU, mJU.getEstCost(), mJU.getEstCard()
 
+
+query = qry.Query(conn, directed=True) 
+
+
 tic= time.time()
 
 """ ############################################### """
 """ TEST000: create mJUlist & update est. card/cost """
 """ ############################################### """
 ### create mJUlist
-mJUlist = getMicroJUlist(query)    
+mJUlist = mju.MicroJUlist().getMicroJUlist(query)
 ### update mJUlist metrics
 mJUlist.updateEstCostCardCost_mJU(query)
 #mJUlist_sort_by_cost(mJUlist)
@@ -895,6 +1046,9 @@ from itertools import chain
 
 ### identify the cheapest mJU by cardinality
 mJU = mJUlist.getMJUlist()[0]
+mJU.getRbetter()
+
+mJU.
 
 res = defaultdict(list, dict(chain(mJU.getMTM().getFanouts().getGraph().items(), 
                                    mJU.getLTM().getFanouts().getGraph().items(), 
@@ -964,6 +1118,7 @@ query2.substitute(mJU_CE_BE_BC_AB_CD.getRTM(), CE_BE_BC_AB_CD)
 query2.resetKeyVal()
 query2
 
+query3.getKeys()[0].getCard()
 
 query3 = copy.deepcopy(query2)
 mJUlist5 = mju.MicroJUlist().getMicroJUlist(query3, excldShort = True)  
@@ -974,6 +1129,7 @@ mJUlist6.getMJUlist()
 
 excldShort = False
 
+"""
 mJUlist = mju.MicroJUlist([])
 query = query1
 queryGraph_vk = query.getQuery_vk().getQueryGraph()
@@ -997,13 +1153,13 @@ for TM1 in queryGraph_vk.keys(): # first node
 mJUlist.mJUlist_display()
 
 cost0 + cost1
-
-for TM3, TM4 in itertools.combinations(otherTMs, 2):
-    print TM3, TM4
+"""
 
 
 
 """
+for TM3, TM4 in itertools.combinations(otherTMs, 2):
+    print TM3, TM4
 
 
 query1.getQueryGraph()[A]
