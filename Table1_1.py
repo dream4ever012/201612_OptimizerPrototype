@@ -47,6 +47,12 @@ class TM(object):
     
     def getLowestFO(self, other):
         return self.getFanouts().getLowestFO(other.getFanouts())
+
+    def getJoinCard(self, other):
+        return (self.getLowestFO(other))*self.card*other.card
+    
+    def getJoinCardByCard(self, card1, card2, fo):
+        return card1*card2*fo
         
     def getCum_cost(self):
         return self.cum_cost

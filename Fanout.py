@@ -59,9 +59,6 @@ class Fanouts(object):
         return temp
         
     def getFOs(self, tbl):
-        """ return list of sorted fanouts that connects between the two TMs
-            interesection: set of intersection tables between the two TMs
-            otherwise return an empty list """
         if len(self._graph[tbl])==0: # if doesn't existed, empty list created
             del self._graph[tbl] # reset by deleting the empty list
             return []
@@ -69,6 +66,9 @@ class Fanouts(object):
             return self._graph[tbl]
         
     def getFOs_list(self, intersection):
+        """ return list of sorted fanouts that connects between the two TMs
+            interesection: set of intersection tables between the two TMs
+            otherwise return an empty list """
         FOs_list = []
         for tbl in intersection:
             FOs_list.append(self.getFOs(tbl))

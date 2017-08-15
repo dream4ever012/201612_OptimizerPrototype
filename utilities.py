@@ -28,3 +28,9 @@ class Utilities(object):
         
     def cost_norm_preds(self, table):
         return table.card
+    
+    def card_join_TM_tbl_by_card(self, TMcard, ProdNormSel):
+        return TMcard*ProdNormSel
+    
+    def card_join_TM_TM_by_card(self, TM1card, TM2card, fanout_ratio):
+        return TM1card*TM2card*fanout_ratio
