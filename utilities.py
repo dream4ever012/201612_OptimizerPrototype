@@ -34,3 +34,6 @@ class Utilities(object):
     
     def card_join_TM_TM_by_card(self, TM1card, TM2card, fanout_ratio):
         return TM1card*TM2card*fanout_ratio
+    
+    def choose_join_method(self, TM1card, TM2card):
+        return self.cost_join_nl_by_card

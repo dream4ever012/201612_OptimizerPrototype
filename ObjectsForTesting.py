@@ -257,7 +257,7 @@ CE = tbl.TM(table_name='CE', card=1200000, cum_cost=0)
 
 
 conn = [(A, AB), (B, AB), (B, BC), (C, BC), (B, BE), (C, CE), (C, CD), (D, CD), (E, BE), (E, CE)]
-query = qry.Query(conn, directed=True) 
+query = qry.Query(conn, directed=True)
 #toc= time.time()*1000000000
 #print "query graph fetch", (toc-tic)
 #conn = [(A, AB), (B, AB), (B, BC), (C, BC)]
@@ -837,7 +837,7 @@ class TM_join_nju_pre(object):
     def getOtherTM(self):
         return self.otherTM
     
-    def hasLTM(self):
+    def getHasLTM(self):
         return self.hasLTM
     
     def __repr__(self):
@@ -849,13 +849,13 @@ class TM_join_nju(object):
         self.MTM = tm_join_nju_pre.getMJU().getMTM()
         #self.MTMName = MTM.getTableName()
         self.MTMCard = self.MTM.getCard()
-        self.otherTM = tm_join_nju_pre.getMJU().getLTM() if hasLTM else tm_join_nju_pre.getMJU().getRTM()
+        self.hasLTM = tm_join_nju_pre.getHasLTM() # if hasLTM this.TMjoin is left nano Junit
+        self.otherTM = tm_join_nju_pre.getMJU().getLTM() if self.hasLTM else tm_join_nju_pre.getMJU().getRTM()
         self.otherTMCard = self.otherTM.getCard()
-        self.hasLTM = tm_join_nju_pre.hasLTM() # if hasLTM this.TMjoin is left nano Junit
         self.ClsTM = (self.MTM, self.otherTM)
         self.ClsTMCard = None ### if None: It hasn't been processed.
         self.costTMjoin = 0.0
-        self.joinCostF = joinCostF
+        self.joinCostF = utl.Utilities().choose_join_method(self.MTMCard, self.otherTMCard)
         
     def getMTM(self):
         return self.MTM
@@ -880,8 +880,8 @@ class TM_join_nju(object):
     def getCostTMjoin(self):
         return self.costTMjoin
     
-    #def setCostTMjoin(self, cost):
-    #    self.costTMjoin = cost
+    def setCostTMjoin(self, cost):
+        self.costTMjoin = cost
         
     def getClsTMCard(self):
         return self.ClsTMCard
@@ -950,6 +950,12 @@ class normPred_nju(object):
     def getTblCard(self):
         return self.tblCard
     
+    def setTblCard(self, card):
+        self.tblCard = card
+    
+    def getTM(self):
+        return self.TM
+    
     def getTblProdNormSel(self):
         return self.tblProdNormSel
     
@@ -961,6 +967,9 @@ class normPred_nju(object):
     
     def getCostPred(self):
         return self.costPred
+    
+    def setCostPred(self, cost):
+        self.costPred  = cost
     
     #def setCostPred(self, cost):
     #    self.costPred = cost
@@ -998,19 +1007,16 @@ class nJU(object):
         #self.tbls_MTMonly, self.tbls_otherTMonly = self.MTM_tbls.difference(tbls_inter), self.otherTM_tbls.difference(tbls_inter)
         tbls_MTMonly, tbls_otherTMonly = MTM_tbls.difference(tbls_inter), otherTM_tbls.difference(tbls_inter)
         self.tbls_loTMonly = loTM_tbls.difference(MTM_tbls).difference(otherTM_tbls)
-        
-        
+               
         ### craete lists of normPreds objects
-        predsMTMonly = [normPred_nju_pre(mJU, table, isLeft = self.isLeft, isOnly = True, isMTM = True) for table in tbls_MTMonly if table.has_normPred()]
-        predsMotherTMboth = [normPred_nju_pre(mJU, table, isLeft = self.isLeft, isOnly = False, isMTM = True) for table in tbls_inter if table.has_normPred()]
-        predsOtherTMonly = [normPred_nju_pre(mJU, table, isLeft = self.isLeft, isOnly = True, isMTM = False) for table in tbls_otherTMonly if table.has_normPred()]
-        self.predsLoTMonly = [normPred_nju_pre(mJU, table, isLeft = self.isLeft, isOnly = True, isMTM = False) for table in tbls_loTMonly if table.has_normPred()]
+        self.predsMTMonly = [normPred_nju_pre(mJU, table, isLeft = self.isLeft, isOnly = True, isMTM = True) for table in tbls_MTMonly if table.has_normPred()]
+        self.predsMotherTMboth = [normPred_nju_pre(mJU, table, isLeft = self.isLeft, isOnly = False, isMTM = True) for table in tbls_inter if table.has_normPred()]
+        self.predsOtherTMonly = [normPred_nju_pre(mJU, table, isLeft = self.isLeft, isOnly = True, isMTM = False) for table in tbls_otherTMonly if table.has_normPred()]
+        self.predsLoTMonly = [normPred_nju_pre(mJU, table, isLeft = self.isLeft, isOnly = True, isMTM = False) for table in self.tbls_loTMonly if table.has_normPred()]
         self.TM_join = TM_join_nju_pre(mJU, hasLTM = True if self.isLeft else False)
-        self.allPredsNjoin =  predsMTMonly + predsOtherTMonly + predsMotherTMboth + [self.TM_join]
+        self.allPredsNjoin =  self.predsMTMonly +self.predsOtherTMonly + self.predsMotherTMboth + [self.TM_join]
         self.cumCost = 0.0
         self.pathList = pathList(self.allPredsNjoin, self)
-        """
-        """
         
     def getMTM(self):
         return self.MTM
@@ -1025,7 +1031,6 @@ class nJU(object):
         return self.cumCost
     
     def getAllPredsNjoin(self):
-        ### 
         return self.allPredsNjoin
     
     def addCumcost(self, cost):
@@ -1034,12 +1039,23 @@ class nJU(object):
     def getTbls_liTMonly(self):
         return self.tbls_loTMonly
     
+    def getIsLeft(self):
+        return self.isLeft
+    
+    def processPathList(self):
+        self.pathList.processPath()
+        
+    def whereIsIt(self, table):
+        ### to identify where a predicate belong to       
+        if table in self.predsMTMonly: return 0
+        elif table in self.predsMotherTMboth: return 1
+        elif table in self.predsOtherTMonly: return 2
+        
+    def sortPathBySumcost(self):
+        self.pathList.sortPathBySumcost()
+    
     def __repr__(self):
         return '(All preds:{}; isLeft:{}; cumCost:{})'.format([pred for pred in self.allPredsNjoin], self.isLeft, self.cumCost)
-    """
-    def __repr__(self):
-        return '(MTM:{}; otherTM:{}; isLeft:{}; cumCost:{})'.format(self.MTM, self.otherTM, self.isLeft, self.cumCost)
-    """
     
     
 class pathList(object):
@@ -1069,12 +1085,17 @@ class pathList(object):
     def getRbetter(self):
         return self.Rbetter
     
-    def processPres(self, IntToMTM = True, doIntToMTMlist=True):
-        for path in self.IntToMTMlist if doIntToMTMlist == True else self.IntToOtherTMlist:
-            path.processPath()     
-    
+    def processPath(self):
+        for path_ITM, path_ITO in zip(self.IntToMTMlist, self.IntToOtherTMlist):
+            path_ITM.processPath()
+            path_ITO.processPath()    
+            
+    def sortPathBySumcost(self):
+        self.IntToMTMlist.sort(key=lambda path: sum(path.cost))
+        self.IntToOtherTMlist.sort(key=lambda path: sum(path.cost))
+
     def __repr__(self):
-        return '({}, {})'.format(self.IntToMTMlist, self.IntToOtherTMlist)
+        return '(IntToMTMlist: {}, \n \n IntToOtherTMlist: {})'.format(self.IntToMTMlist, self.IntToOtherTMlist)
           
     
 class path(object):
@@ -1089,7 +1110,7 @@ class path(object):
         self.nJU = nJU        
 
     def __repr__(self):
-        return '(statHolder:{}; path:{}; cost:{})'.format(self.statHolder, self.pathMatObj_list, self.cost)
+        return '(statHolder:{}; path:{}; cost:{} \n)'.format(self.statHolder, self.pathMatObj_list, self.cost)
    
     def createStatHolder(self, op):
         """ input instance of normPred_nju or TM_join_nju """
@@ -1104,7 +1125,7 @@ class path(object):
     def createStatsDict(self, all_ops):
         """ call createStatHolder """
         list_tup =( [self.createStatHolder(op) for op in all_ops[0:-1]] 
-            + [self.createStatHolder(op) for op in [all_ops[-1]]])
+            + [tup for tup in self.createStatHolder(all_ops[-1])])
         return dict((table, card) for table, card in list_tup)
     
     """
@@ -1116,6 +1137,9 @@ class path(object):
     
     def getPath(self):
         return self.path
+    
+    def getPathMatObj_list(self):
+        return self.pathMatObj_list
     
     def getStat(self, table):
         try:
@@ -1142,8 +1166,8 @@ class path(object):
         if isinstance(pred_obj, normPred_nju_pre):
             return normPred_nju(pred_obj)
         elif isinstance(pred_obj, TM_join_nju_pre):
-            return TM_join_nju(pred_obj)        
-        
+            return TM_join_nju(pred_obj)
+
     def processPath(self):
         for pred_obj in self.pathMatObj_list:
             self.processObj(pred_obj) #, cost_table_scan = utl.Utilities().cost_table_scan, cost_join_nl_by_card = utl.Utilities().cost_join_nl_by_card)
@@ -1157,31 +1181,35 @@ class path(object):
             table = pred_obj.getTbl()
             temp_cost = utl.Utilities().cost_table_scan(self.getStat(table)) # cost of table scan
             # update table card
-            self.updateCard(table, self.getStat(table)*pred_obj.getTblProdNormSel())
+            pred_obj.setTblCard(self.getStat(table)*pred_obj.getTblProdNormSel()) ### set pred card
+            self.updateCard(table, self.getStat(table)*pred_obj.getTblProdNormSel()) ### update to statholder
             
             # join cost
-            TM = self.nJU.getMTM() if self.nJU.isMTM() else self.nJU.getOtherTM()
+            TM = pred_obj.getTM()
             TMcard = self.getStat(TM)
             tableCard = self.getStat(table)
             temp_cost += utl.Utilities().cost_join_nl_by_card(tableCard, TMcard)
             # update TM card
             self.updateCard(TM, utl.Utilities().card_join_TM_tbl_by_card(TMcard, pred_obj.getTblProdNormSel()))
+            pred_obj.setCostPred(temp_cost) ### update temp_cost tp pred_obj
+            
+            """ UPDATE PRED OBJ + MAKE SURE STATHOLDER"""
                 
         elif isinstance(pred_obj, TM_join_nju): ### pred obj is TM join
             # TM join cost
             MTM, OtherTM = pred_obj.getMTM(), pred_obj.getOtherTM()
             MTMcard = self.getStat(MTM)
             OtherTMcard = self.getStat(OtherTM)
-            temp_cost = utl.Utilities().cost_join_nl_by_card(MTMcard, OtherTMcard)
+            temp_cost = utl.Utilities().cost_join_nl_by_card(MTMcard, OtherTMcard) ### cost of TM join
             # update TMClsCard                
             self.updateCard((MTM, OtherTM), utl.Utilities().card_join_TM_TM_by_card(MTMcard, OtherTMcard, MTM.getLowestFO(OtherTM).getFO()))
-            self.updateCost(temp_cost)
+            pred_obj.setCostTMjoin(temp_cost) ### update TMjoin cost to TMjoin obj
+        self.updateCost(temp_cost) ### update pred/TMjoin cost to statHolder
             
+
     
-    
-B
+
 mJUlist = mju.MicroJUlist().getMicroJUlist(query)
-mJUlist = getMicroJUlist(query)
 mJU = mJUlist.getMJUlist()[0]
 
 isLeft = True
@@ -1190,6 +1218,27 @@ isLeft = True
 ### create prelist
 nju = nJU(mJU, isLeft=True)
 nju.getAllPredsNjoin()
+
+# process 
+""" ### took 6ms  ### may finish the search when cost 
+tic = time.time()
+for i in range(100):
+    nju = nJU(mJU, isLeft=True)
+    nju.processPathList()
+toc = time.time()
+toc-tic
+"""
+
+nju.processPathList()
+nju.sortPathBySumcost()
+
+nju.getPathList()
+
+
+
+
+type(nju.getPathList().getIntToMTMlist()[0].getPathMatObj_list()[0])
+nju.getPathList().getIntToMTMlist()[0].getPathMatObj_list()[0].getTM()
 
 def createStatHolder(op):
     """ input instance of normPred_nju or TM_join_nju """
@@ -1204,10 +1253,19 @@ def createStatHolder(op):
 def createStatsDict(all_ops):
     """ call createStatHolder """
     ### all regular tables and TMs
-    list_tup =( [createStatHolder(op) for op in all_ops[0:-1]] 
-                + [createStatHolder(op) for op in [all_ops[-1]]])
+    a = [createStatHolder(op) for op in all_ops[0:-1]] 
+    print a
+    b = [tup for tup in createStatHolder(all_ops[-1])]
+    print b
+    list_tup = a+b
+    print list_tup
     return dict((table, card) for table, card in list_tup)
     
+createStatsDict(nju.getAllPredsNjoin())
+all_ops = nju.getAllPredsNjoin()
+list_tup =( [createStatHolder(op) for op in all_ops[0:-1]] + [tup for tup in createStatHolder(all_ops[-1])])
+
+type(list_tup[4])
 
 """ ### cretaed all stats
 createStatsDict(nju.getAllPredsNjoin())
@@ -1231,16 +1289,12 @@ createStatHolder(nju.getAllPredsNjoin()[3])
 """
 ## ClsTM hasn't instantiated yet
 
-all_ops = nju.getAllPredsNjoin()
-list_tup =( [createStatHolder(op) for op in all_ops[0:-1]] 
-                + [createStatHolder(op) for op in [all_ops[-1]]])
 
-type(all_ops[-1])
 
 isinstance(all_ops[-1], TM_join_nju_pre)
+isinstance(all_ops[0], normPred_nju_pre)
 
 
-[createStatHolder(op) for op in [all_ops[-1]]]
 
 import itertools
 a = list(itertools.permutations(nju.getAllPredsNjoin()))
@@ -1250,6 +1304,7 @@ type(a[0][0])
 ############################################################################
 
 path_l = pathList(nju.getAllPredsNjoin(), nju)
+path_l.processPath()
 path_l
 
 ### instantiate full pred obj according to path_tup
@@ -1295,13 +1350,16 @@ a[0]
 ############################################################################
 
 
+MTM_tbls = mJU.getMTM_tbls()
+otherTM_tbls = mJU.getLTM_tbls() if isLeft else mJU.getRTM_tbls()
+loTM_tbls = mJU.getRTM_tbls() if isLeft else mJU.getLTM_tbls()
+### TMjoinUnit
+#self.tbls_inter = self.MTM_tbls.intersection(self.otherTM_tbls)
+tbls_inter = MTM_tbls.intersection(otherTM_tbls)
+#self.tbls_MTMonly, self.tbls_otherTMonly = self.MTM_tbls.difference(tbls_inter), self.otherTM_tbls.difference(tbls_inter)
+tbls_MTMonly, tbls_otherTMonly = MTM_tbls.difference(tbls_inter), otherTM_tbls.difference(tbls_inter)
+self.tbls_loTMonly = loTM_tbls.difference(MTM_tbls).difference(otherTM_tbls)
 
-predsMTMonly = [normPred_nju_pre(mJU, table, isOnly = True, isMTM = True, isLeft) for table in tbls_MTMonly if table.has_normPred()]
-predsMotherTMboth = [normPred_nju_pre(mJU, table, isOnly = False, isMTM = True, isLeft) for table in tbls_intersection if table.has_normPred()]
-predsOtherTMonly = [normPred_nju_pre(mJU, table, isOnly = True, isMTM = False, isLeft) for table in tbls_otherTMonly if table.has_normPred()]
-
-type(nju.getAllPredsNjoin()[0])
-isinstance(nju.getAllPredsNjoin()[0], normPred_nju_pre)
 
 
 ### do permutation ==> instanciate normPred_nju_pre
@@ -1311,6 +1369,13 @@ isinstance(nju.getAllPredsNjoin()[0], normPred_nju_pre)
 tbls_inter = MTM_tbls.intersection(otherTM_tbls)
 tbls_MTMonly, tbls_otherTMonly = MTM_tbls.difference(tbls_inter), otherTM_tbls.difference(tbls_inter)
 tbls_loTMonly = loTM_tbls.difference(MTM_tbls).difference(otherTM_tbls)
+
+predsMTMonly = [normPred_nju_pre(mJU, table, isOnly = True, isMTM = True, isLeft=True) for table in tbls_MTMonly if table.has_normPred()]
+predsMotherTMboth = [normPred_nju_pre(mJU, table, isOnly = False, isMTM = True, isLeft=True) for table in tbls_intersection if table.has_normPred()]
+predsOtherTMonly = [normPred_nju_pre(mJU, table, isOnly = True, isMTM = False, isLeft=True) for table in tbls_otherTMonly if table.has_normPred()]
+
+type(nju.getAllPredsNjoin()[0])
+isinstance(nju.getAllPredsNjoin()[0], normPred_nju_pre)
 
 ### created normPred_nju: one per a table
 predsMTMonly = [normPred_nju_pre(nju, table, isOnly = True, isMTM = True) for table in tbls_MTMonly if table.has_normPred()]
@@ -1434,7 +1499,6 @@ if isinstance(path[0], normPred_nju):
 #2 check if obj is TM_join_nju
 if isinstance(path[0], TM_join_nju):
 
-print (type(res))
 for tup in res:
     print (tup)
 
