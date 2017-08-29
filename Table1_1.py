@@ -47,6 +47,11 @@ class TM(object):
     
     def getLowestFO(self, other):
         return self.getFanouts().getLowestFO(other.getFanouts())
+    
+    def getLowestFO_TMtup(self, TM_join_nju_obj):
+        LowestFO_MTM = self.getFanouts().getLowestFO(TM_join_nju_obj.getMTM().getFanouts())
+        LowestFO_OtherTM = self.getFanouts().getLowestFO(TM_join_nju_obj.getOtherTM().getFanouts())
+        return LowestFO_MTM if LowestFO_MTM.getFO() <= LowestFO_OtherTM.getFO() else LowestFO_OtherTM
 
     def getJoinCard(self, other):
         return (self.getLowestFO(other))*self.card*other.card
@@ -154,7 +159,8 @@ class Table(object):
         return self.norm_preds.getPreds()
     
     def getProdNormSel(self):
-        return self.norm_preds.getProdNormSel()
+        return self.norm_preds.getProdNormSel() if self.norm_preds.has_normPred() else 1.0
+        # IF just make sure that ProdNormSel does not distort when norm_preds does not have normPred
     
     def getUDFPreds(self):
         return self.UDF_preds.getPreds()

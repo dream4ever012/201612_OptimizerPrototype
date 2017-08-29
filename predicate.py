@@ -21,7 +21,7 @@ class Predicate(object):
     def __init__(self, pred_name = 'DFT', sel = 1.0, norm_sel_bool = True): #, UDF_sel_bool = False):
         self.pred_name = pred_name # pred name follows after col_nanme + idx 
                                    # in case that multiple preds in a col exist
-        self.norm_sel_bool = norm_sel_bool
+        self.norm_sel_bool = norm_sel_bool ### True: valid pred; False: dismiss
         #self.UDF_sel_bool = UDF_sel_bool
         self.sel = sel # always set to 1.0 and bool = False initially
         self.est_cost_pr = 0 # estimated cost per row: # ns or ms
