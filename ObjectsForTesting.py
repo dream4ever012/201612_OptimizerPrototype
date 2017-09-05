@@ -867,48 +867,78 @@ type(nju1.getPathList().getIntToMTMlist()[0].pathMatObj_list[-1])
 # scenario1: preds to LoTM ==> LoTM <=> TMjoin; scenario2: LoTM <=> TMjoin ==> preds to TM_cls
 # maybe we may call scenario1 as predF and scenario2 as TMjoinF
 
-temp_card = None
-temp_cost = 0
 
-1 is True
-True is 1
-True == 1
-False == 0
+
+path1 = nju1.getPathList().getIntToMTMlist()[0]
+path1.getStatHolder()
+
+type(nju1.getPredsLoTMonly()[0])
+
+
+processObj
+
+""" have to check pred or TMjoin is first ==> hold better and update stats accordingly 
+hold the update until you know what """
 ### update pred to TM
 ### output temp_cost: table scan + pred <=> TM; temp_card
+temp_card = None
+temp_cost = 0
 for pred in nju1.getPredsLoTMonly():
     # table scan cost
     tblCard = pred.getTblCard()
     temp_cost += utl.Utilities().cost_table_scan(tblCard)
     
     TMcard = pred.getTM().getCard()
-    # join cost
+    # table join cost
     temp_cost += utl.Utilities().cost_join_nl_by_card(tblCard, TMcard)
-    # update cardinality
+    # join cardinality
     temp_lo_card = utl.Utilities().card_join_TM_tbl_by_card(TMcard if temp_card is None else temp_card, pred.getTblProdNormSel())
-
+    
 print temp_lo_card, temp_cost
-### Let's do TM join
-"""HERE find lowest FO
 
-# TM join cost
-# TMs tuple + loTM// BUT stats are from statHolder
 
-# find lowest fanouts TMjoin_nju_obj, loTM==> DONE check in TM
+#### how to get TMjoin key/Stat
+path1.getKey_TMjoin()
+path1.getTMjoinStat() # cost
 
-cost update ==> have to figure out how to update the stats
+#### how to get njuJoin key/Stat
+path1.getKey_njuJoin()
+path1.getMjuJoinStat()
 
-nju1.getLoTM().getLowestFO_TMtup()
+
+# cost of njuTM join #### have to use temp_lo_card!!!!!!
+TMnju_join_cost = utl.Utilities().cost_join_nl_by_card(path1.getTMjoinStat(), temp_lo_card)
+# card of njuTM join
+loTM = path1.getLoTM()
+TMnju_card_predJF = utl.Utilities().card_join_TM_TM_by_card(path1.getTMjoinStat(), temp_lo_card, loTM.getLowestFO_TMtup(path1.getTM_join_nju_obj()).getFO())
+
+TMnju_join_cost
+TMnju_card_predJF 
+
+
+
+
+
+
+############## TMjoin FIRST
+temp_lo_card = path1.getLoTMcard()
+TMnju_card_njuJF = utl.Utilities().card_join_TM_TM_by_card(path1.getTMjoinStat(), temp_lo_card, loTM.getLowestFO_TMtup(path1.getTM_join_nju_obj()).getFO())
+
+for pred in nju1.getPredsLoTMonly():
+    
+
+
+
+
+
+
+# update card
+#path1.updateCard(path1.getKey_njuJoin(), TMnju_card)
+# update cost
+#################path1.updateCost()
+
 
 # TM card
-
-
-"""
-temp_cost = 0
-temp_cost += utl.Utilities().cost_table_scan(nju1.getPredsLoTMonly()[0].getTblCard())
-utl.Utilities().card_join_TM_tbl_by_card(nju1.getPredsLoTMonly()[0].getTM().getCard(), nju1.getPredsLoTMonly()[0].getTblProdNormSel())
-
-
 
 
 nju2 = nju.nJU(mJU, isLeft=False)
@@ -919,12 +949,9 @@ nju2.getPathList()
 res_RnJU = [sum(path.cost) for path in nju2.getPathList().getIntToMTMlist()]
 
 ### process rest
-
 best_path = nju1.getPathList().getIntToMTMlist()[0] if res_LnJU[0] <= res_RnJU[0] else nju2.getPathList().getIntToMTMlist()[0]
 
 #[sum(path.cost) for path in nju1.getPathList().getIntToOtherTMlist()]
-
-
 
 type(nju1.getPathList().getIntToMTMlist()[0].getPathMatObj_list()[0])
 nju1.getPathList().getIntToMTMlist()[0].getPathMatObj_list()[0].getTM()
@@ -937,23 +964,20 @@ def createStatHolder(op):
     elif isinstance(op, nju.TM_join_nju_pre):
         MTM = op.getMTM()
         OtherTM = op.getOtherTM()                                  ### stats for TMcls
-        return (MTM, MTM.getCard()), (OtherTM, OtherTM.getCard()), ((MTM, OtherTM), 0)
+        loTM = op.getLoTM()
+        return (MTM, MTM.getCard()), (OtherTM, OtherTM.getCard()), ((MTM, OtherTM), 0), ((MTM, OtherTM, loTM), 0)
 
 def createStatsDict(all_ops):
     """ call createStatHolder """
     ### all regular tables and TMs
-    a = [createStatHolder(op) for op in all_ops[0:-1]] 
-    print a
-    b = [tup for tup in createStatHolder(all_ops[-1])]
-    print b
-    list_tup = a+b
-    print list_tup
+    list_tup = ([createStatHolder(op) for op in all_ops[0:-1]] + [tup for tup in createStatHolder(all_ops[-1])])
     return dict((table, card) for table, card in list_tup)
     
 createStatsDict(nju1.getAllPredsNjoin())
 all_ops = nju1.getAllPredsNjoin()
-list_tup =( [createStatHolder(op) for op in all_ops[0:-1]] + [tup for tup in createStatHolder(all_ops[-1])])
-
+type(all_ops[-1])
+list_tup =( [createStatHolder(op) for op in all_ops[0:-1]] + [tup for tup in createStatHolder(all_ops[-1])]) 
+dict((table, card) for table, card in list_tup)
 type(list_tup[4])
 
 """ ### cretaed all stats
