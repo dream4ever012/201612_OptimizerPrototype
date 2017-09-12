@@ -79,6 +79,8 @@ class nJU(object):
         
     def sortPathBySumcost(self):
         self.pathList.sortPathBySumcost()
+        
+    #def pick
     
     def __repr__(self):
         return '(All preds:{}; isLeft:{}; cumCost:{})'.format([pred for pred in self.allPredsNjoin], self.isLeft, self.cumCost)
@@ -328,8 +330,16 @@ class path(object):
         self.TM_join_nju_obj = None
         self.instMatPredObj_list()
         self.cost = [] ### cost of each pred/TMjoin
-        self.nju = nju         
-
+        self.nju = nju
+        self.DidLoPredsF = None
+        self.njuFinalRes = None ## temp_card, TMnju_card_predJF, pred_cost, TMnju_join_cost
+        
+    def getDidLoPredsF(self):
+        return self.DidLoPredsF
+    
+    def setDidLoPredF(self, DidLoPredsF):
+        self.DidLoPredsF = DidLoPredsF
+    
     def getLoTM(self):
         return self.nju.getLoTM()
     
@@ -338,6 +348,9 @@ class path(object):
 
     def getStatHolder(self):
         return self.statHolder
+    
+    def getNju(self):
+        return self.nju
 
     def __repr__(self):
         return '(statHolder:{}; path:{}; cost:{} \n)'.format(self.statHolder, self.pathMatObj_list, self.cost)
@@ -462,6 +475,61 @@ class path(object):
     
     def getTMjoinStat(self):
         return self.getStat(self.getKey_TMjoin())
+    
+    def process_loPredsF(self):
+        temp_card = None
+        pred_cost = 0
+    
+        predsLoTMonly = self.getNju().getPredsLoTMonly()
+        TMcard = predsLoTMonly[0].getTM().getCard()
+        for pred in predsLoTMonly:
+            tblCard = pred.getTblCard()
+            pred_cost += utl.Utilities().cost_table_scan(tblCard)
+            pred_cost += utl.Utilities().cost_join_nl_by_card(tblCard, TMcard if temp_card is None else temp_card)
+            temp_card = utl.Utilities().card_join_TM_tbl_by_card(TMcard if temp_card is None else temp_card, pred.getTblProdNormSel())
+    
+        # cost of njuTM join #### have to use temp_lo_card!!!!!!
+        TMnju_join_cost = utl.Utilities().cost_join_nl_by_card(self.getTMjoinStat(), temp_card)
+        # card of njuTM join
+        loTM = self.getLoTM()
+        TMnju_card_predJF = utl.Utilities().card_join_TM_TM_by_card(self.getTMjoinStat(), temp_card, loTM.getLowestFO_TMtup(self.getTM_join_nju_obj()).getFO())
+    
+        return temp_card, TMnju_card_predJF, pred_cost, TMnju_join_cost
+
+    def process_loTMjoinF(self):
+        predsLoTMonly = self.getNju().getPredsLoTMonly()
+        TMcard = predsLoTMonly[0].getTM().getCard()
+        
+        # cost of njuTM join #### have to use temp_lo_card!!!!!!
+        TMnju_join_cost = utl.Utilities().cost_join_nl_by_card(self.getTMjoinStat(), TMcard)
+        # card of njuTM join
+        loTM = self.getLoTM()
+        TMnju_card_predJF = utl.Utilities().card_join_TM_TM_by_card(self.getTMjoinStat(), TMcard, loTM.getLowestFO_TMtup(self.getTM_join_nju_obj()).getFO())
+        
+        temp_card = None
+        pred_cost = 0
+    
+        predsLoTMonly = self.getNju().getPredsLoTMonly()
+        TMcard = TMnju_card_predJF
+        for pred in predsLoTMonly:
+            tblCard = pred.getTblCard()
+            pred_cost += utl.Utilities().cost_table_scan(tblCard)
+            pred_cost += utl.Utilities().cost_join_nl_by_card(tblCard, TMcard if temp_card is None else temp_card)
+            temp_card = utl.Utilities().card_join_TM_tbl_by_card(TMcard if temp_card is None else temp_card, pred.getTblProdNormSel())
+    
+        return temp_card, TMnju_card_predJF, pred_cost, TMnju_join_cost 
+    
+    
+    def loPredF(self):
+        loPredsF = self.process_loPredsF()
+        loTMjoinF = self.process_loTMjoinF()   
+        
+        DoPredsF = ((loPredsF[2] + loPredsF[3])<= (loTMjoinF[2]+loTMjoinF[3]))
+        self.setDidLoPredF(True) if DoPredsF else self.setIsLoPredF(False)
+        self.njuFinalRes = loPredsF if DoPredsF else loTMjoinF
+        self.updateCost(self.njuFinalRes[2] + self.njuFinalRes[3])
+        self.updateCard()
+        #return loPredsF if DoPredsF else loTMjoinF
     
     """
     def getTMjoinStat(self):

@@ -7,6 +7,7 @@ Created on Wed Mar 15 11:27:31 2017
 
 import ExpMtrcs_tbl as emt
 import utilities as utl
+import nanoJU as nju
 utl1 = utl.Utilities()
 
 class MicroJU(object):
@@ -20,11 +21,16 @@ class MicroJU(object):
         self.estCost = 0.0
         self.isLegit = False
         self.Rbetter = None
+        self.njuL = nju.nJU(self, isLeft=True)
+        self.njuR = nju.nJU(self, isLeft=False)
         # may not want to initiate this object when it is obviously not productive 
         self.expMtrcsDict = None
         if (self.isLegit == True):
             self.initiate_tbls_TMs_est_mtrcs() # after add other TMs
+    
+    #def pickCheaperNju(self):
         
+    
     def initiate_tbl_est_metrics(self, table):
         """ initiate table estimated metrics to _tbls """
         #expMtrcs_tbl = emt.ExpMtrcs_tbl(table)

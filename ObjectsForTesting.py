@@ -844,43 +844,101 @@ toc-tic
 """
 ### create prelist
 nju1 = nju.nJU(mJU, isLeft=True)
-nju1.getAllPredsNjoin()
 nju1.processPathList()
 nju1.sortPathBySumcost()
-nju1.getPathList()
-
-res_LnJU = [sum(path.cost) for path in nju1.getPathList().getIntToMTMlist()]
-
-nju1.getPathList().getIntToMTMlist()[0].getPathMatObj_list()
-nju1.getLoTM()
-nju1.getPredsLoTMonly()#
-type(nju1.getPredsLoTMonly()[0])
-type(nju1.getPathList().getIntToMTMlist()[0])
-nju1.getPredsLoTMonly()[0].getTM()
-
-nju1.getPathList().getIntToMTMlist()[0].getPathMatObj_list()
-
-nju1.getPathList().getIntToMTMlist()[0].getTMjoinStat()
-
-type(nju1.getPathList().getIntToMTMlist()[0].pathMatObj_list[-1])
-
-# scenario1: preds to LoTM ==> LoTM <=> TMjoin; scenario2: LoTM <=> TMjoin ==> preds to TM_cls
-# maybe we may call scenario1 as predF and scenario2 as TMjoinF
-
-
-
+###### Best plan and completed the 
 path1 = nju1.getPathList().getIntToMTMlist()[0]
 path1.getStatHolder()
+path1.loPredF()
+sum(path1.cost)
+path1.statHolder
 
-type(nju1.getPredsLoTMonly()[0])
+njuR = nju.nJU(mJU, isLeft=False)
+njuR.processPathList()
+njuR.sortPathBySumcost()
+path1R = njuR.getPathList().getIntToMTMlist()[0]
+path1R.loPredF()
+sum(path1R.cost)
 
 
-processObj
+mJU
+
+"""
+mJUlist = mju.MicroJUlist().getMicroJUlist(query)
+### update mJUlist metrics
+mJUlist.updateEstCostCardCost_mJU(query)
+#mJUlist_sort_by_cost(mJUlist)
+mJUlist.mJUlist_sort_by_card()
+mJUlist.mJUlist_display()
+"""
+
 
 """ have to check pred or TMjoin is first ==> hold better and update stats accordingly 
 hold the update until you know what """
 ### update pred to TM
 ### output temp_cost: table scan + pred <=> TM; temp_card
+
+def process_loPredsF(path1, nju1):
+    temp_card = None
+    pred_cost = 0
+    
+    predsLoTMonly = nju1.getPredsLoTMonly()
+    TMcard = predsLoTMonly[0].getTM().getCard()
+    for pred in predsLoTMonly:
+        tblCard = pred.getTblCard()
+        pred_cost += utl.Utilities().cost_table_scan(tblCard)
+        pred_cost += utl.Utilities().cost_join_nl_by_card(tblCard, TMcard if temp_card is None else temp_card)
+        temp_card = utl.Utilities().card_join_TM_tbl_by_card(TMcard if temp_card is None else temp_card, pred.getTblProdNormSel())
+    
+    # cost of njuTM join #### have to use temp_lo_card!!!!!!
+    TMnju_join_cost = utl.Utilities().cost_join_nl_by_card(path1.getTMjoinStat(), temp_card)
+    # card of njuTM join
+    loTM = path1.getLoTM()
+    TMnju_card_predJF = utl.Utilities().card_join_TM_TM_by_card(path1.getTMjoinStat(), temp_card, loTM.getLowestFO_TMtup(path1.getTM_join_nju_obj()).getFO())
+    
+    return temp_card, TMnju_card_predJF, pred_cost, TMnju_join_cost
+
+def process_loTMjoinF(path1, nju1):
+    predsLoTMonly = nju1.getPredsLoTMonly()
+    TMcard = predsLoTMonly[0].getTM().getCard()
+    
+    # cost of njuTM join #### have to use temp_lo_card!!!!!!
+    TMnju_join_cost = utl.Utilities().cost_join_nl_by_card(path1.getTMjoinStat(), TMcard)
+    # card of njuTM join
+    loTM = path1.getLoTM()
+    TMnju_card_predJF = utl.Utilities().card_join_TM_TM_by_card(path1.getTMjoinStat(), TMcard, loTM.getLowestFO_TMtup(path1.getTM_join_nju_obj()).getFO())
+    
+    temp_card = None
+    pred_cost = 0
+    
+    predsLoTMonly = nju1.getPredsLoTMonly()
+    TMcard = TMnju_card_predJF
+    for pred in predsLoTMonly:
+        tblCard = pred.getTblCard()
+        pred_cost += utl.Utilities().cost_table_scan(tblCard)
+        pred_cost += utl.Utilities().cost_join_nl_by_card(tblCard, TMcard if temp_card is None else temp_card)
+        temp_card = utl.Utilities().card_join_TM_tbl_by_card(TMcard if temp_card is None else temp_card, pred.getTblProdNormSel())
+    
+    return temp_card, TMnju_card_predJF, pred_cost, TMnju_join_cost 
+    
+    
+def loPredF(path1, nju1):
+    loPredsF = process_loPredsF(path1, nju1)
+    loTMjoinF = process_loTMjoinF(path1, nju1)   
+    
+    DoPredsF = ((loPredsF[2] + loPredsF[3])<= (loTMjoinF[2]+loTMjoinF[3]))
+    path1.setDidLoPredF(True) if DoPredsF else path1.setIsLoPredF(False)
+    return (loPredsF, DoPredsF) if DoPredsF else (loTMjoinF, DoPredsF)
+    #return loPredsF if DoPredsF else loTMjoinF
+    
+    
+    
+    
+    
+
+ 
+    
+
 temp_card = None
 temp_cost = 0
 for pred in nju1.getPredsLoTMonly():
@@ -890,11 +948,11 @@ for pred in nju1.getPredsLoTMonly():
     
     TMcard = pred.getTM().getCard()
     # table join cost
-    temp_cost += utl.Utilities().cost_join_nl_by_card(tblCard, TMcard)
+    temp_cost += utl.Utilities().cost_join_nl_by_card(tblCard, TMcard if temp_card is None else temp_card)
     # join cardinality
-    temp_lo_card = utl.Utilities().card_join_TM_tbl_by_card(TMcard if temp_card is None else temp_card, pred.getTblProdNormSel())
+    temp_card = utl.Utilities().card_join_TM_tbl_by_card(TMcard if temp_card is None else temp_card, pred.getTblProdNormSel())
     
-print temp_lo_card, temp_cost
+print temp_card, temp_cost
 
 
 #### how to get TMjoin key/Stat
@@ -907,24 +965,50 @@ path1.getMjuJoinStat()
 
 
 # cost of njuTM join #### have to use temp_lo_card!!!!!!
-TMnju_join_cost = utl.Utilities().cost_join_nl_by_card(path1.getTMjoinStat(), temp_lo_card)
+TMnju_join_cost = utl.Utilities().cost_join_nl_by_card(path1.getTMjoinStat(), temp_card)
 # card of njuTM join
 loTM = path1.getLoTM()
-TMnju_card_predJF = utl.Utilities().card_join_TM_TM_by_card(path1.getTMjoinStat(), temp_lo_card, loTM.getLowestFO_TMtup(path1.getTM_join_nju_obj()).getFO())
+TMnju_card_predJF = utl.Utilities().card_join_TM_TM_by_card(path1.getTMjoinStat(), temp_card, loTM.getLowestFO_TMtup(path1.getTM_join_nju_obj()).getFO())
 
-TMnju_join_cost
-TMnju_card_predJF 
+TMnju_join_cost 
+temp_cost
 
+print 'pred=>njuJ: ', TMnju_join_cost + temp_cost
 
-
+TMnju_card_predJF
 
 
 
 ############## TMjoin FIRST
 temp_lo_card = path1.getLoTMcard()
+### njuJoin
 TMnju_card_njuJF = utl.Utilities().card_join_TM_TM_by_card(path1.getTMjoinStat(), temp_lo_card, loTM.getLowestFO_TMtup(path1.getTM_join_nju_obj()).getFO())
+TMnju_join_cost2 = utl.Utilities().cost_join_nl_by_card(path1.getTMjoinStat(), temp_lo_card)
 
+### preds later
+temp_card1 = None
+temp_cost1 = 0
 for pred in nju1.getPredsLoTMonly():
+    # table scan cost
+    tblCard = pred.getTblCard()
+    temp_cost1 += utl.Utilities().cost_table_scan(tblCard)
+    
+    TMcard = pred.getTM().getCard()
+    # table join cost
+    temp_cost1 += utl.Utilities().cost_join_nl_by_card(tblCard, TMcard if temp_card1 is None else temp_card1)
+    # join cardinality
+    temp_card1 = utl.Utilities().card_join_TM_tbl_by_card(TMcard if temp_card1 is None else temp_card1, pred.getTblProdNormSel())
+    
+print temp_card1, temp_cost1
+
+njuFcost = TMnju_join_cost2 + temp_cost1
+njuLcost = TMnju_join_cost + temp_cost
+
+njuFcost - njuLcost
+
+
+#for pred in nju1.getPredsLoTMonly():
+    
     
 
 
